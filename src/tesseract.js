@@ -123,13 +123,13 @@
             0, 0, 0, 1
         ]);
 
-        var projection = mat4.create();
-        mat4.ortho(projection, 0, canvas.width, 0, canvas.height, -canvas.width/2, canvas.width/2);
+        var ortho = mat4.create();
+        mat4.ortho(ortho, 0, canvas.width, 0, canvas.height, -canvas.width/2, canvas.width/2);
 
-        mat4.multiply(projection, projection, oblique);
+        mat4.multiply(ortho, ortho, oblique);
 
         var loc = gl.getUniformLocation(program, 'upersp');
-        gl.uniformMatrix4fv(loc, false, projection);
+        gl.uniformMatrix4fv(loc, false, ortho);
 
         geo = makeGrid(2, 100, 25, 4, 13);
 

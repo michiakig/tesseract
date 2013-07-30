@@ -2,7 +2,6 @@
     var gl;
     var rx = 0, ry = 0, rz = 0;
     var p;
-    var geo;
     var program;
 
     function rad(deg) { return deg * Math.PI / 180; };
@@ -116,33 +115,30 @@
         gl.clearColor(0, 0, 0, 1);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
+        // prepare and load projection matrix
         var oblique = new Float32Array([
             1, 0, 0, 0,
             0, 1, 0, 0,
             0.5*Math.sin(rad(-50)), 0.5*Math.sin(rad(-50)), 0, 0,
             0, 0, 0, 1
         ]);
-
         var ortho = mat4.create();
         mat4.ortho(ortho, 0, canvas.width, 0, canvas.height, -canvas.width/2, canvas.width/2);
-
         mat4.multiply(ortho, ortho, oblique);
-
         var loc = gl.getUniformLocation(program, 'uproj');
         gl.uniformMatrix4fv(loc, false, ortho);
 
-        geo = makeGrid(2, 100, 25, 4, 13);
-
+        // create game grid
+        var grid = makeGrid(2, 100, 25, 4, 13);
         var t = mat4.create();
         mat4.translate(t, t, vec3.fromValues(75, 50, 0));
-        geo.transform(t);
-
-        pushData(gl, geo.flatten());
+        grid.transform(t);
+        pushData(gl, grid.flatten());
         updateAttrib(gl, program, 'pos', 4);
+
         loc = gl.getUniformLocation(program, 'ucolor');
         gl.uniform4fv(loc, new Float32Array([1, 1, 0, 1]));
-        gl.drawArrays(gl.TRIANGLES, 0, geo.count());
-
+        gl.drawArrays(gl.TRIANGLES, 0, grid.count());
     }
 
     window.main = main;

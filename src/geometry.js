@@ -99,15 +99,15 @@
         }
 
         /*
-         
+
          create geometry for each individual axis, where:
-         
+
              Y
              |
              |
              |_____X
             /
-           /  
+           /
           Z
 
          */

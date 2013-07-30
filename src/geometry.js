@@ -90,6 +90,10 @@
         return square;
     }
 
+    /**
+     * Make geometry for a (false) cube. doesn't include back, bottom
+     * or left faces as the cube will never rotate
+     */
     function makeCube(w) {
         return new Geometry([
             // front
@@ -110,34 +114,7 @@
             [w, 0,   0, 1],
             [w, 0,  -w, 1],
 
-            // back
-            [w, w, -w, 1],
-            [w,  0, -w, 1],
-            [0,  w, -w, 1],
-
-            [0,  w, -w, 1],
-            [w, 0, -w, 1],
-            [0,  0, -w, 1],
-
-            // left
-            [0,  w, -w, 1],
-            [0,  0,  -w, 1],
-            [0,  w,   0, 1],
-
-            [0,  w,  0, 1],
-            [0,  0,  -w, 1],
-            [0,  0,   0, 1],
-
             // top
-            [0,  0,  0, 1],
-            [0,  0, -w, 1],
-            [w,  0, 0, 1],
-
-            [w, 0, 0, 1],
-            [0,  0, -w, 1],
-            [w, 0, -w, 1],
-
-            // bottom
             [0,  w, -w, 1],
             [0,  w,  0, 1],
             [w, w, -w, 1],

@@ -1,6 +1,7 @@
 ;(function(window) {
     /**
-     * Wrapper around some vertices
+     * Geometry objects wrap a collection of vertices, and support
+     * transforming them as a group
      */
     function Geometry(data) {
         if(data) {
@@ -55,15 +56,12 @@
         return this.data.length;
     };
 
-    function rectangle(x, y, w, h) {
-        return new Geometry([
-            vec4.fromValues(x,   y,   0, 1),
-            vec4.fromValues(x+w, y,   0, 1),
-            vec4.fromValues(x,   y+h, 0, 1),
-            vec4.fromValues(x,   y+h, 0, 1),
-            vec4.fromValues(x+w, y,   0, 1),
-            vec4.fromValues(x+w, y+h, 0, 1)
-        ]);
+    /**
+     * Constructor functions for various geometries
+     */
+
+    function tovec(arr) { // convert an Array to a vec4 (i.e. Float32Array)
+        return vec4.fromValues.apply(vec4, arr);
     }
 
     function lineSquare() {
@@ -89,15 +87,69 @@
         return square;
     }
 
+    function makeCube() {
+        var cube = new Geometry([
+            // front
+            [0,  25, 0, 1],
+            [0,  0,  0, 1],
+            [25, 25, 0, 1],
+
+            [25, 25, 0, 1],
+            [0,  0,  0, 1],
+            [25, 0,  0, 1],
+
+            // right
+            [25, 25,  0, 1],
+            [25, 0,   0, 1],
+            [25, 25, -25, 1],
+
+            [25, 25, -25, 1],
+            [25, 0,   0, 1],
+            [25, 0,  -25, 1],
+
+            // back
+            [25, 25, -25, 1],
+            [25,  0, -25, 1],
+            [0,  25, -25, 1],
+
+            [0,  25, -25, 1],
+            [25, 0, -25, 1],
+            [0,  0, -25, 1],
+
+            // left
+            [0,  25, -25, 1],
+            [0,  0,  -25, 1],
+            [0,  25,   0, 1],
+
+            [0,  25,  0, 1],
+            [0,  0,  -25, 1],
+            [0,  0,   0, 1],
+
+            // top
+            [0,  0,  0, 1],
+            [0,  0, -25, 1],
+            [25,  0, 0, 1],
+
+            [25, 0, 0, 1],
+            [0,  0, -25, 1],
+            [25, 0, -25, 1],
+
+            // bottom
+            [0,  25, -25, 1],
+            [0,  25,  0, 1],
+            [25, 25, -25, 1],
+
+            [25, 25, -25, 1],
+            [0,  25,  0, 1],
+            [25, 25,  0, 1]
+        ].map(function(arr) { return vec4.fromValues.apply(vec4, arr); }));
+    }
+
     /**
      * Make geometry for the grid -- width and length refer to the individual lines
      * floorsize is the spaces in the floor (i.e. 4 for 4x4) and height the number of rows
      */
     function makeGrid(width, length, blocksize /* FIXME ? */, floorsize, height) {
-        function tovec(arr) { // convert an Array to a vec4 (i.e. Float32Array)
-            return vec4.fromValues.apply(vec4, arr);
-        }
-
         /*
 
          create geometry for each individual axis, where:
@@ -209,8 +261,6 @@
     }
 
     window.Geometry = Geometry;
-    window.rectangle = rectangle;
-    window.lineSquare = lineSquare;
     window.makeGrid = makeGrid;
 
 })(window);

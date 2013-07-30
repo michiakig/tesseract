@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+  <head>
+    <title>tesseract</title>
+
+    <script type="x-shader/x-vertex" id="vertex">
+attribute vec4 pos;
+
+uniform vec4 ucolor;
+uniform mat4 upersp;
+
+varying vec4 vcolor;
+
+void main() {
+    gl_Position = upersp * pos;
+    vcolor = ucolor;
+}
+    </script>
+
+    <script type="x-shader/x-fragment" id="fragment">
+precision mediump float;
+
+varying vec4 vcolor;
+
+void main() {
+    gl_FragColor = vcolor;
+}
+    </script>
+
+    <script src="lib/gl-matrix.js"></script>
+    <script src="src/utils.js"></script>
+    <script src="src/geometry.js"></script>
+    <script src="src/tesseract.js"></script>
+
+    <link href="style.css" rel="stylesheet" type="text/css">
+  </head>
+  <body onload="main();">
+    <canvas id="canvas" width="400" height="400"></canvas>
+  </body>
+</html>

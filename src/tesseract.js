@@ -1,6 +1,5 @@
 ;(function(window) {
     var gl;
-    var rx = 0, ry = 0, rz = 0;
     var p;
     var program;
 
@@ -71,24 +70,21 @@
 
     function handle(evt) {
         switch(evt.keyCode) {
-            case 87: /* W */ rx+=1; break;
-            case 83: /* S */ rx-=1; break;
+            case 87: /* W */ break;
+            case 83: /* S */ break;
+            case 65: /* A */ break;
+            case 68: /* D */ break;
+            case 81: /* Q */ break;
+            case 69: /* E */ break;
 
-            case 65: /* A */ ry-=1; break;
-            case 68: /* D */ ry+=1; break;
-
-            case 81: /* Q */ rz-=1; break;
-            case 69: /* E */ rz+=1; break;
-
-            // case 37: /* left */  break;
-            // case 38: /* up */    break;
-            // case 39: /* right */ break;
-            // case 40: /* down  */ break;
+            case 37: /* left */  break;
+            case 38: /* up */    break;
+            case 39: /* right */ break;
+            case 40: /* down  */ break;
 
             default: // console.log(evt.keyCode);
             break;
         }
-        console.log('['+rx+','+ry+','+rz+']');
     }
 
     function main() {

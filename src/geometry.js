@@ -148,30 +148,33 @@
          */
 
         var yaxis = new Geometry([
-            [0, 0, 0, 1],
+            [width, blocksize * height, 0, 1],
             [0, blocksize * height, 0, 1],
-            [width, blocksize * height, 0, 1],
-            [width, blocksize * height, 0, 1],
+            [0, 0, 0, 1],
+
+            [0, 0, 0, 1],
             [width, 0, 0, 1],
-            [0, 0, 0, 1]
+            [width, blocksize * height, 0, 1]
         ].map(toVec4));
 
         var xaxis = new Geometry([
-            [0, 0, 0, 1],
+            [length, width, 0, 1],
             [0, width, 0, 1],
-            [length, width, 0, 1],
-            [length, width, 0, 1],
+            [0, 0, 0, 1],
+
+            [0, 0, 0, 1],
             [length, 0, 0, 1],
-            [0, 0, 0, 1]
+            [length, width, 0, 1]
         ].map(toVec4));
 
         var zaxis = new Geometry([
+            [width, 0, length, 1],
+            [width, 0, 0, 1],
             [0, 0, 0, 1],
-            [0, width, 0, 1],
-            [0, width, length, 1],
-            [0, width, length, 1],
+
+            [0, 0, 0, 1],
             [0, 0, length, 1],
-            [0, 0, 0, 1]
+            [width, 0, length, 1]
         ].map(toVec4));
 
         // duplicate and transform to make grids

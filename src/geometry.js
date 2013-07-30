@@ -1,4 +1,7 @@
 ;(function(window) {
+    function rad(deg) { return deg * Math.PI / 180; };
+    function deg(rad) { return rad / Math.PI * 180; };
+
     /**
      * Geometry objects wrap a collection of vertices, and support
      * transforming them as a group
@@ -242,5 +245,8 @@
 
     window.Geometry = Geometry;
     window.makeGrid = makeGrid;
+    window.makeCube = makeCube;
+    window.deg = deg;
+    window.rad = rad;
 
 })(window);

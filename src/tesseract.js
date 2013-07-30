@@ -1,10 +1,6 @@
 ;(function(window) {
     var gl;
-    var p;
     var program;
-
-    function rad(deg) { return deg * Math.PI / 180; };
-    function deg(rad) { return rad / Math.PI * 180; };
 
     var requestAnimationFrame =
         window.requestAnimationFrame ||

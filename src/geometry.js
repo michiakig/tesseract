@@ -60,7 +60,10 @@
      * Constructor functions for various geometries
      */
 
-    function tovec(arr) { // convert an Array to a vec4 (i.e. Float32Array)
+    /**
+     * convert an Array to a vec4 (i.e. Float32Array)
+     */
+    function toVec4(arr) {
         return vec4.fromValues.apply(vec4, arr);
     }
 
@@ -171,7 +174,7 @@
             [width, blocksize * height, 0, 1],
             [width, 0, 0, 1],
             [0, 0, 0, 1]
-        ].map(tovec));
+        ].map(toVec4));
 
         var xaxis = new Geometry([
             [0, 0, 0, 1],
@@ -180,7 +183,7 @@
             [length, width, 0, 1],
             [length, 0, 0, 1],
             [0, 0, 0, 1]
-        ].map(tovec));
+        ].map(toVec4));
 
         var zaxis = new Geometry([
             [0, 0, 0, 1],
@@ -189,7 +192,7 @@
             [0, width, length, 1],
             [0, 0, length, 1],
             [0, 0, 0, 1]
-        ].map(tovec));
+        ].map(toVec4));
 
         // duplicate and transform to make grids
 

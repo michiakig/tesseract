@@ -7,12 +7,12 @@
 attribute vec4 pos;
 
 uniform vec4 ucolor;
-uniform mat4 upersp;
+uniform mat4 uproj;
 
 varying vec4 vcolor;
 
 void main() {
-    gl_Position = upersp * pos;
+    gl_Position = uproj * pos;
     vcolor = ucolor;
 }
     </script>

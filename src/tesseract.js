@@ -128,7 +128,7 @@
 
         mat4.multiply(ortho, ortho, oblique);
 
-        var loc = gl.getUniformLocation(program, 'upersp');
+        var loc = gl.getUniformLocation(program, 'uproj');
         gl.uniformMatrix4fv(loc, false, ortho);
 
         geo = makeGrid(2, 100, 25, 4, 13);

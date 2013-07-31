@@ -19,41 +19,8 @@
     // gl context and compiled shader program
     var gl, program;
 
-    var gridThing;
-    var cubeThing;
-
-    /**
-     * 3-dimensional game board
-     */
-    function Board(w, d, h) {
-        this.w = w;
-        this.d = d;
-        this.h = h;
-        var board = new Array(h);
-        for(var i = 0; i < h; i++) {
-            board[i] = new Array(w);
-            for(var j = 0; j < w; j++) {
-                board[i][j] = new Array(d);
-            }
-        }
-        this.board = board;
-    }
-    Board.prototype.get = function(x, y, z) {
-        return this.board[y][x][z];
-    };
-    Board.prototype.set = function(x, y, z, thing) {
-        this.board[y][x][z] = thing;
-    };
-
-    Board.prototype.forEach = function(fn) {
-        for(var y = 0; y < this.h; y++) {
-            for(var x = 0; x < this.w; x++) {
-                for(var z = 0; z < this.d; z++) {
-                    fn(this.get(x, y, z));
-                }
-            }
-        }
-    };
+    var grid;
+    var thing;
 
     /**
      * thing that can be drawn.
@@ -96,6 +63,23 @@
         this.wireframe.draw(gl, pgm);
     };
 
+    function Piece(things) {
+        this.things = things;
+    }
+    Piece.prototype.add = function(thing) {
+        this.things.push(thing);
+    };
+    Piece.prototype.move = function(x, y, z) {
+        this.things.forEach(function(thing) {
+            thing.move(x, y, z);
+        });
+    };
+    Piece.prototype.draw = function(gl, pgm) {
+        this.things.forEach(function(thing) {
+            thing.draw(gl, pgm);
+        });
+    };
+
     function main() {
         // compatibility boilerplate
         if(!window.WebGLRenderingContext) {
@@ -130,26 +114,24 @@
         var loc = gl.getUniformLocation(program, 'uproj');
         gl.uniformMatrix4fv(loc, false, ortho);
 
-        // create game grid
-        var grid = makeGrid(GRID_THICKNESS, BLOCK_SIZE, BOARD_WIDTH, BOARD_DEPTH, BOARD_HEIGHT);
-        var gridColor = new Float32Array([1, 1, 0, 1]);
-        gridThing = new Thing(0, grid.count(), gridColor, gl.TRIANGLES);
-        gridThing.move(50, 50, 0);
+        // create geometry for game grid
+        var gridGeom = makeGrid(GRID_THICKNESS, BLOCK_SIZE, BOARD_WIDTH, BOARD_DEPTH, BOARD_HEIGHT);
+        var cubeSolidGeom = makeCube(BLOCK_SIZE); // create geometry for solid part of cube
+        var cubeWireGeom = makeWireframeCube(BLOCK_SIZE); // ... and wireframe part
 
-        // create cube, includes solid part
-        var solid = makeCube(BLOCK_SIZE);
-        var solidThing = new Thing(grid.count(), solid.count(), new Float32Array([0, 0.8, 0, 1]), gl.TRIANGLES);
+        grid = new Thing(0, gridGeom.count(), new Float32Array([1, 1, 0, 1]), gl.TRIANGLES);
+        grid.move(BLOCK_SIZE * 2, BLOCK_SIZE * 2, 0);
 
-        // ... and wireframe part
-        var wireframe = makeWireframeCube(25);
-        var wireframeThing = new Thing(grid.count() + solid.count(), wireframe.count(), new Float32Array([1, 1, 1, 1]), gl.LINE_STRIP);
+        var solid1 = new Thing(gridGeom.count(), cubeSolidGeom.count(), new Float32Array([0, 0.8, 0, 1]), gl.TRIANGLES);
+        var wire1 = new Thing(gridGeom.count() + cubeSolidGeom.count(), cubeWireGeom.count(), new Float32Array([1, 1, 1, 1]), gl.LINE_STRIP);
+        var cube1 = new Cube(solid1, wire1);
 
-        cubeThing = new Cube(solidThing, wireframeThing);
-        cubeThing.move(50, 50, 25);
+        thing = new Piece([cube1]);
+        thing.move(BLOCK_SIZE * 2, BLOCK_SIZE * 2, 25);
 
         // upload all the geometry
-        var geo = grid.union(solid, wireframe);
-        pushData(gl, geo.flatten());
+        var geometry = gridGeom.union(cubeSolidGeom, cubeWireGeom);
+        pushData(gl, geometry.flatten());
         updateAttrib(gl, program, 'pos', 4);
 
         document.body.addEventListener('keydown', handle);
@@ -162,8 +144,8 @@
     function handle(evt) {
         var x = 0, y = 0, z = 0;
         switch(evt.keyCode) {
-            case 87: /* W */ break;
-            case 83: /* S */ break;
+            case 87: /* W */ y = 25; break;
+            case 83: /* S */ y = -25; break;
             case 65: /* A */ break;
             case 68: /* D */ break;
             case 81: /* Q */ break;
@@ -177,7 +159,7 @@
             default: // console.log(evt.keyCode);
             break;
         }
-        cubeThing.move(x, y, z);
+        thing.move(x, y, z);
     }
 
     /**
@@ -187,8 +169,8 @@
         gl.clearColor(0, 0, 0, 1);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
-        gridThing.draw(gl, program);
-        cubeThing.draw(gl, program);
+        grid.draw(gl, program);
+        thing.draw(gl, program);
 
         requestAnimationFrame(draw);
     }

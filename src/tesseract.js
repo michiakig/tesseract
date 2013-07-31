@@ -202,6 +202,10 @@
         piece.move(x, y, z);
     }
 
+    /**
+     * compare two blocks based on position, front to back, left to
+     * right, bottom to top
+     */
     function compare (a, b) {
         if(a.z < b.z) {
             return -1;

@@ -43,7 +43,7 @@
         return new Geometry(res);
     };
 
-    Geometry.prototype.union = function() {
+    Geometry.prototype.combine = function() {
         var res = [];
         function p(vtx) {
             res.push(vec4.clone(vtx));
@@ -89,7 +89,7 @@
         var right = left.clone();
         right.transform(mat4.translate(mat4.create(), mat4.create(), vec4.fromValues(47, 0, 0, 1)));
 
-        var square = right.union(bot, left, top);
+        var square = right.combine(bot, left, top);
         return square;
     }
 
@@ -266,7 +266,7 @@
             g.transform(t);
             res.push(g);
         }
-        return res.reduce(function(acc, x) { return acc.union(x); });
+        return res.reduce(function(acc, x) { return acc.combine(x); });
     }
 
     window.Geometry = Geometry;

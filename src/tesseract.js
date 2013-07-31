@@ -134,7 +134,7 @@
         thing.move(BLOCK_SIZE * 2, BLOCK_SIZE * 2, 25);
 
         // upload all the geometry
-        var geometry = gridGeom.union(cubeSolidGeom, cubeWireGeom);
+        var geometry = gridGeom.combine(cubeSolidGeom, cubeWireGeom);
         pushData(gl, geometry.flatten());
         updateAttrib(gl, program, 'pos', 4);
 

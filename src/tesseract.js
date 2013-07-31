@@ -20,6 +20,9 @@
     // individual grid lines dims in px
     var GRID_THICKNESS = 2;
 
+    // indices into vertex attribute array (positions)
+    var solidIndex, solidCount, wireIndex, wireCount;
+
     // gl context and compiled shader program
     var gl, program;
 
@@ -51,20 +54,25 @@
         gl.drawArrays(this.type, this.index, this.count);
     };
 
-    /**
-     * compose a solid thing and a wireframe thing to form a Cube thing
-     */
-    function Cube(solid, wireframe) {
-        this.solid = solid;
-        this.wireframe = wireframe;
+    function Block(x, y, z, color) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.solid = new Thing(solidIndex, solidCount, color, WebGLRenderingContext.TRIANGLES);
+        this.wire = new Thing(wireIndex, wireCount, WHITE, WebGLRenderingContext.LINE_STRIP);
+        this.solid.move(x * BLOCK_SIZE, y * BLOCK_SIZE, z * BLOCK_SIZE);
+        this.wire.move(x * BLOCK_SIZE, y * BLOCK_SIZE, z * BLOCK_SIZE);
     }
-    Cube.prototype.move = function(x, y, z) {
-        this.solid.move(x, y, z);
-        this.wireframe.move(x, y, z);
+    Block.prototype.move = function(x, y, z) {
+        this.x += x;
+        this.y += y;
+        this.z += z;
+        this.solid.move(x * BLOCK_SIZE, y * BLOCK_SIZE, z * BLOCK_SIZE);
+        this.wire.move(x * BLOCK_SIZE, y * BLOCK_SIZE, z * BLOCK_SIZE);
     };
-    Cube.prototype.draw = function(gl, pgm) {
-        this.solid.draw(gl, pgm);
-        this.wireframe.draw(gl, pgm);
+    Block.prototype.draw = function(gl, program) {
+        this.solid.draw(gl, program);
+        this.wire.draw(gl, program);
     };
 
     function Piece(things) {
@@ -126,12 +134,13 @@
         grid = new Thing(0, gridGeom.count(), YELLOW, gl.TRIANGLES);
         grid.move(BLOCK_SIZE * 2, BLOCK_SIZE * 2, 0);
 
-        var solid1 = new Thing(gridGeom.count(), cubeSolidGeom.count(), GREEN, gl.TRIANGLES);
-        var wire1 = new Thing(gridGeom.count() + cubeSolidGeom.count(), cubeWireGeom.count(), WHITE, gl.LINE_STRIP);
-        var cube1 = new Cube(solid1, wire1);
+        solidIndex = gridGeom.count();
+        solidCount = cubeSolidGeom.count();
+        wireIndex = gridGeom.count() + cubeSolidGeom.count();
+        wireCount = cubeWireGeom.count();
 
-        thing = new Piece([cube1]);
-        thing.move(BLOCK_SIZE * 2, BLOCK_SIZE * 2, 25);
+        thing = new Block(0, 0, 0, GREEN);
+        thing.move(2, 2, 1);
 
         // upload all the geometry
         var geometry = gridGeom.combine(cubeSolidGeom, cubeWireGeom);
@@ -148,17 +157,17 @@
     function handle(evt) {
         var x = 0, y = 0, z = 0;
         switch(evt.keyCode) {
-            case 87: /* W */ y = 25; break;
-            case 83: /* S */ y = -25; break;
+            case 87: /* W */ y = 1; break;
+            case 83: /* S */ y = -1; break;
             case 65: /* A */ break;
             case 68: /* D */ break;
             case 81: /* Q */ break;
             case 69: /* E */ break;
 
-            case 37: /* left */  x = -25; break;
-            case 38: /* up */    z = -25; break;
-            case 39: /* right */ x =  25; break;
-            case 40: /* down  */ z =  25; break;
+            case 37: /* left */  x = -1; break;
+            case 38: /* up */    z = -1; break;
+            case 39: /* right */ x =  1; break;
+            case 40: /* down  */ z =  1; break;
 
             default: // console.log(evt.keyCode);
             break;

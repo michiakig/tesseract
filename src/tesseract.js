@@ -33,11 +33,19 @@
     // gl context and compiled shader program
     var gl, program;
 
-    var grid;
-    var thing;
+    var grid; // game grid lines, static
+    var piece; // currently "live" piece
+    var blocks; // "dead" blocks
 
     function rangeCheck(x, y, z) {
-        return x >= 0 && x < BOARD_WIDTH && y >= 0 && y < BOARD_HEIGHT && z >= 0 && z < BOARD_DEPTH;
+        var inside = x >= 0 && x < BOARD_WIDTH && y >= 0 && y < BOARD_HEIGHT && z >= 0 && z < BOARD_DEPTH;
+        var notCollide = true;
+        blocks.forEach(function(block) {
+            if(block.x == x && block.y == y && block.z == z) {
+                notCollide = false;
+            }
+        });
+        return inside && notCollide;
     }
 
     /**
@@ -148,13 +156,16 @@
         var cubeWireGeom = makeWireframeCube(BLOCK_SIZE); // ... and wireframe part
 
         grid = new Thing(0, gridGeom.count(), YELLOW, gl.TRIANGLES);
+        mat4.translate(grid.model, grid.model, vec3.fromValues(0, 0, 1));
 
         solidIndex = gridGeom.count();
         solidCount = cubeSolidGeom.count();
         wireIndex = gridGeom.count() + cubeSolidGeom.count();
         wireCount = cubeWireGeom.count();
 
-        thing = new Block(0, 0, 0, GREEN);
+        piece = new Block(0, BOARD_HEIGHT-1, 0, randColor());
+
+        blocks = [piece];
 
         // upload all the geometry
         var geometry = gridGeom.combine(cubeSolidGeom, cubeWireGeom);
@@ -163,6 +174,8 @@
 
         document.body.addEventListener('keydown', handle);
         draw();
+
+        setInterval(update, 500);
     }
 
     /**
@@ -186,7 +199,39 @@
             default: // console.log(evt.keyCode);
             break;
         }
-        thing.move(x, y, z);
+        piece.move(x, y, z);
+    }
+
+    function compare (a, b) {
+        if(a.z < b.z) {
+            return -1;
+        } else if(a.z > b.z) {
+            return 1;
+        } else if(a.x < b.x) {
+            return -1;
+        } else if(a.x > b.x) {
+            return 1;
+        } else if(a.y < b.y) {
+            return -1;
+        } else if(a.y > b.y) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    /**
+     * update the game state
+     */
+    function update() {
+        if(rangeCheck(piece.x, piece.y - 1, piece.z)) {
+            piece.move(0,-1,0);
+            blocks.sort(compare);
+        } else {
+            piece = new Block(0, BOARD_HEIGHT-1, 0, randColor());
+            blocks[blocks.length] = piece;
+            blocks.sort(compare);
+        }
     }
 
     /**
@@ -194,10 +239,13 @@
      */
     function draw() {
         gl.clearColor(0, 0, 0, 1);
-        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         grid.draw(gl, program);
-        thing.draw(gl, program);
+
+        blocks.forEach(function(block) {
+            block.draw(gl, program);
+        });
 
         requestAnimationFrame(draw);
     }

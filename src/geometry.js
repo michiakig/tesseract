@@ -129,6 +129,25 @@
     }
 
     /**
+     * returns geometry for a cube outlined in w thick lines of length l
+     */
+    function makeWireframeCube(w) {
+        return new Geometry([
+            [w, 0, 0, 1],
+            [0, 0, 0, 1],
+            [0, w, 0, 1],
+            [w, w, 0, 1],
+            [w, 0, 0, 1],
+            [w, 0, -w, 1],
+            [w, w, -w, 1],
+            [w, w, 0, 1],
+            [0, w, 0, 1],
+            [0, w, -w, 1],
+            [w, w, -w, 1]
+        ].map(toVec4));
+    }
+
+    /**
      * Make geometry for the grid -- width and length refer to the individual lines
      * floorsize is the spaces in the floor (i.e. 4 for 4x4) and height the number of rows
      */
@@ -249,6 +268,7 @@
     window.Geometry = Geometry;
     window.makeGrid = makeGrid;
     window.makeCube = makeCube;
+    window.makeWireframeCube = makeWireframeCube;
     window.deg = deg;
     window.rad = rad;
 

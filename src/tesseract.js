@@ -27,13 +27,13 @@
     var thing;
 
     /**
-     * thing that can be drawn.
-     * includes an index and count for the position vertex array
-     * a color, a type (gl.TRIANGLES, gl.TRIANGLE_STRIP, etc) and a model matrix
+     * Low-level thing that can be drawn. includes an index and count
+     * for the position vertex array, a color, a type (TRIANGLES,
+     * TRIANGLE_STRIP, etc)
      */
-    function Thing(idx, ct, color, type) {
-        this.idx = idx;
-        this.ct = ct;
+    function Thing(index, count, color, type) {
+        this.index = index;
+        this.count = count;
         this.color = color;
         this.type = type;
         this.model = mat4.create();
@@ -48,7 +48,7 @@
 
         loc = gl.getUniformLocation(pgm, 'ucolor');
         gl.uniform4fv(loc, this.color);
-        gl.drawArrays(this.type, this.idx, this.ct);
+        gl.drawArrays(this.type, this.index, this.count);
     };
 
     /**

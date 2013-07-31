@@ -15,6 +15,9 @@
      * 3-dimensional game board
      */
     function Board(w, d, h) {
+        this.w = w;
+        this.d = d;
+        this.h = h;
         var board = new Array(h);
         for(var i = 0; i < h; i++) {
             board[i] = new Array(w);
@@ -29,6 +32,16 @@
     };
     Board.prototype.set = function(x, y, z, thing) {
         this.board[y][x][z] = thing;
+    };
+
+    Board.prototype.forEach = function(fn) {
+        for(var y = 0; y < this.h; y++) {
+            for(var x = 0; x < this.w; x++) {
+                for(var z = 0; z < this.d; z++) {
+                    fn(this.get(x, y, z));
+                }
+            }
+        }
     };
 
     /**

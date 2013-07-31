@@ -13,6 +13,10 @@
     var BOARD_WIDTH = 4;
     var BOARD_DEPTH = 4;
 
+    var YELLOW = new Float32Array([1, 1, 0, 1]);
+    var GREEN = new Float32Array([0, 0.8, 0, 1]);
+    var WHITE = new Float32Array([1, 1, 1, 1]);
+
     // individual grid lines dims in px
     var GRID_THICKNESS = 2;
 
@@ -119,11 +123,11 @@
         var cubeSolidGeom = makeCube(BLOCK_SIZE); // create geometry for solid part of cube
         var cubeWireGeom = makeWireframeCube(BLOCK_SIZE); // ... and wireframe part
 
-        grid = new Thing(0, gridGeom.count(), new Float32Array([1, 1, 0, 1]), gl.TRIANGLES);
+        grid = new Thing(0, gridGeom.count(), YELLOW, gl.TRIANGLES);
         grid.move(BLOCK_SIZE * 2, BLOCK_SIZE * 2, 0);
 
-        var solid1 = new Thing(gridGeom.count(), cubeSolidGeom.count(), new Float32Array([0, 0.8, 0, 1]), gl.TRIANGLES);
-        var wire1 = new Thing(gridGeom.count() + cubeSolidGeom.count(), cubeWireGeom.count(), new Float32Array([1, 1, 1, 1]), gl.LINE_STRIP);
+        var solid1 = new Thing(gridGeom.count(), cubeSolidGeom.count(), GREEN, gl.TRIANGLES);
+        var wire1 = new Thing(gridGeom.count() + cubeSolidGeom.count(), cubeWireGeom.count(), WHITE, gl.LINE_STRIP);
         var cube1 = new Cube(solid1, wire1);
 
         thing = new Piece([cube1]);

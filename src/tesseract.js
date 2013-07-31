@@ -13,6 +13,26 @@
         window.msRequestAnimationFrame;
 
     /**
+     * 3-dimensional game board
+     */
+    function Board(w, d, h) {
+        var board = new Array(h);
+        for(var i = 0; i < h; i++) {
+            board[i] = new Array(w);
+            for(var j = 0; j < w; j++) {
+                board[i][j] = new Array(d);
+            }
+        }
+        this.board = board;
+    }
+    Board.prototype.get = function(x, y, z) {
+        return this.board[y][x][z];
+    };
+    Board.prototype.set = function(x, y, z, thing) {
+        this.board[y][x][z] = thing;
+    };
+
+    /**
      * thing that can be drawn.
      * includes an index and count for the position vertex array
      * a color, a type (gl.TRIANGLES, gl.TRIANGLE_STRIP, etc) and a model matrix
@@ -102,7 +122,6 @@
      */
     function handle(evt) {
         var v = vec3.create();
-
         switch(evt.keyCode) {
             case 87: /* W */ break;
             case 83: /* S */ break;

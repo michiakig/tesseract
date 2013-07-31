@@ -1,6 +1,8 @@
 ;(function(window) {
     var gl;
     var program;
+    var cubeThing;
+    var wireframeThing;
 
     var requestAnimationFrame =
         window.requestAnimationFrame ||
@@ -9,6 +11,8 @@
         window.msRequestAnimationFrame;
 
     function handle(evt) {
+        var v = vec3.create();
+
         switch(evt.keyCode) {
             case 87: /* W */ break;
             case 83: /* S */ break;
@@ -17,14 +21,17 @@
             case 81: /* Q */ break;
             case 69: /* E */ break;
 
-            case 37: /* left */  break;
-            case 38: /* up */    break;
-            case 39: /* right */ break;
-            case 40: /* down  */ break;
+            case 37: /* left */ v[0] = -25; break;
+            case 38: /* up */ v[2] = -25; break;
+            case 39: /* right */ v[0] = 25; break;
+            case 40: /* down  */ v[2] = 25; break;
 
             default: // console.log(evt.keyCode);
             break;
         }
+
+        mat4.translate(cubeThing.model, cubeThing.model, v);
+        mat4.translate(wireframeThing.model, wireframeThing.model, v);
     }
 
     /**
@@ -69,9 +76,6 @@
         program = createProgram(gl, vshader, fshader);
         gl.useProgram(program);
 
-        gl.clearColor(0, 0, 0, 1);
-        gl.clear(gl.COLOR_BUFFER_BIT);
-
         // prepare and load projection matrix
         var oblique = new Float32Array([
             1, 0, 0, 0,
@@ -92,25 +96,38 @@
         mat4.translate(model, model, vec3.fromValues(50, 50, 0));
         var gridThing = new Thing(0, grid.count(), gridColor, gl.TRIANGLES, model);
 
+        // create cube, includes filled part
         var cube = makeCube(25);
         var cubeColor = new Float32Array([0, 0.8, 0, 1]);
         model = mat4.create();
         mat4.translate(model, model, vec3.fromValues(50, 50, 25));
-        var cubeThing = new Thing(grid.count(), cube.count(), cubeColor, gl.TRIANGLES, model);
+        cubeThing = new Thing(grid.count(), cube.count(), cubeColor, gl.TRIANGLES, model);
 
+        // ... and wireframe part
         var wireframe = makeWireframeCube(25);
         var wireframeColor = new Float32Array([1, 1, 1, 1]);
         model = mat4.create();
         mat4.translate(model, model, vec3.fromValues(50, 50, 25));
-        var wireframeThing = new Thing(gridThing.ct + cubeThing.ct, wireframe.count(), wireframeColor, gl.LINE_STRIP, model);
+        wireframeThing = new Thing(gridThing.ct + cubeThing.ct, wireframe.count(), wireframeColor, gl.LINE_STRIP, model);
 
+        // upload all the geometry
         var geo = grid.union(cube, wireframe);
         pushData(gl, geo.flatten());
         updateAttrib(gl, program, 'pos', 4);
 
-        gridThing.draw(gl, program);
-        cubeThing.draw(gl, program);
-        wireframeThing.draw(gl, program);
+        document.body.addEventListener('keydown', handle);
+
+        function tick() {
+            gl.clearColor(0, 0, 0, 1);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            gridThing.draw(gl, program);
+            cubeThing.draw(gl, program);
+            wireframeThing.draw(gl, program);
+
+            requestAnimationFrame(tick);
+        }
+        tick();
     }
 
     window.main = main;

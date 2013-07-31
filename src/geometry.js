@@ -151,7 +151,7 @@
      * Make geometry for the grid -- width and length refer to the individual lines
      * floorsize is the spaces in the floor (i.e. 4 for 4x4) and height the number of rows
      */
-    function makeGrid(width, length, blocksize /* FIXME ? */, floorsize, height) {
+    function makeGrid(thick, blocksize /* FIXME ? */, width, depth, height) {
         /*
 
          create geometry for each individual axis, where:
@@ -166,34 +166,38 @@
 
          */
 
+        var xlen = width * blocksize;
+        var ylen = height * blocksize;
+        var zlen = depth * blocksize;
+
         var yaxis = new Geometry([
-            [width, blocksize * height, 0, 1],
-            [0, blocksize * height, 0, 1],
+            [thick, ylen, 0, 1],
+            [0, ylen, 0, 1],
             [0, 0, 0, 1],
 
             [0, 0, 0, 1],
-            [width, 0, 0, 1],
-            [width, blocksize * height, 0, 1]
+            [thick, 0, 0, 1],
+            [thick, ylen, 0, 1]
         ].map(toVec4));
 
         var xaxis = new Geometry([
-            [length, width, 0, 1],
-            [0, width, 0, 1],
+            [xlen, thick, 0, 1],
+            [0, thick, 0, 1],
             [0, 0, 0, 1],
 
             [0, 0, 0, 1],
-            [length, 0, 0, 1],
-            [length, width, 0, 1]
+            [xlen, 0, 0, 1],
+            [xlen, thick, 0, 1]
         ].map(toVec4));
 
         var zaxis = new Geometry([
-            [width, 0, length, 1],
-            [width, 0, 0, 1],
+            [thick, 0, zlen, 1],
+            [thick, 0, 0, 1],
             [0, 0, 0, 1],
 
             [0, 0, 0, 1],
-            [0, 0, length, 1],
-            [width, 0, length, 1]
+            [0, 0, zlen, 1],
+            [thick, 0, zlen, 1]
         ].map(toVec4));
 
         // duplicate and transform to make grids
@@ -204,7 +208,7 @@
         var res = [];
 
         // x-axis extended in Z direction
-        for(x = 0; x <= floorsize; x++) {
+        for(x = 0; x <= depth; x++) {
             v[Z] = x * blocksize;
             mat4.identity(t);
             mat4.translate(t, t, v);
@@ -224,7 +228,7 @@
         }
         v[Y] = 0;
         // z-axis extended in X direction
-        for(z = 0; z <= floorsize; z++) {
+        for(z = 0; z <= width; z++) {
             v[X] = z * blocksize;
             mat4.identity(t);
             mat4.translate(t, t, v);
@@ -244,7 +248,7 @@
         }
         v[Y] = 0;
         // y-axis extended in X direction
-        for(y = 0; y <= floorsize; y++) {
+        for(y = 0; y <= width; y++) {
             v[X] = y * blocksize;
             mat4.identity(t);
             mat4.translate(t, t, v);
@@ -254,7 +258,7 @@
         }
         v[X] = 0;
         // y-axis extended in Z direction
-        for(y = 0; y <= floorsize; y++) {
+        for(y = 0; y <= depth; y++) {
             v[Z] = y * blocksize;
             mat4.identity(t);
             mat4.translate(t, t, v);

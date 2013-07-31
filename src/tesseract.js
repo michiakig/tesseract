@@ -1,15 +1,26 @@
 ;(function(window) {
-    var gl;
-    var program;
+    var requestAnimationFrame =
+            window.requestAnimationFrame ||
+            window.mozRequestAnimationFrame ||
+            window.webkitRequestAnimationFrame ||
+            window.msRequestAnimationFrame;
+
+    // block dims in px
+    var BLOCK_SIZE = 25;
+
+    // board dims in blocks
+    var BOARD_HEIGHT = 13;
+    var BOARD_WIDTH = 4;
+    var BOARD_DEPTH = 4;
+
+    // individual grid lines dims in px
+    var GRID_THICKNESS = 2;
+
+    // gl context and compiled shader program
+    var gl, program;
 
     var gridThing;
     var cubeThing;
-
-    var requestAnimationFrame =
-        window.requestAnimationFrame ||
-        window.mozRequestAnimationFrame ||
-        window.webkitRequestAnimationFrame ||
-        window.msRequestAnimationFrame;
 
     /**
      * 3-dimensional game board
@@ -120,13 +131,13 @@
         gl.uniformMatrix4fv(loc, false, ortho);
 
         // create game grid
-        var grid = makeGrid(2, 100, 25, 4, 13);
+        var grid = makeGrid(GRID_THICKNESS, BLOCK_SIZE, BOARD_WIDTH, BOARD_DEPTH, BOARD_HEIGHT);
         var gridColor = new Float32Array([1, 1, 0, 1]);
         gridThing = new Thing(0, grid.count(), gridColor, gl.TRIANGLES);
         gridThing.move(50, 50, 0);
 
         // create cube, includes solid part
-        var solid = makeCube(25);
+        var solid = makeCube(BLOCK_SIZE);
         var solidThing = new Thing(grid.count(), solid.count(), new Float32Array([0, 0.8, 0, 1]), gl.TRIANGLES);
 
         // ... and wireframe part

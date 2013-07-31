@@ -8,11 +8,12 @@ attribute vec4 pos;
 
 uniform vec4 ucolor;
 uniform mat4 uproj;
+uniform mat4 umodel;
 
 varying vec4 vcolor;
 
 void main() {
-    gl_Position = uproj * pos;
+    gl_Position = uproj * umodel * pos;
     vcolor = ucolor;
 }
     </script>

@@ -27,6 +27,27 @@
         }
     }
 
+    /**
+     * thing that can be drawn.
+     * includes an index and count for the position vertex array
+     * a color, a type (gl.TRIANGLES, gl.TRIANGLE_STRIP, etc) and a model matrix
+     */
+    function Thing(idx, ct, color, type, model) {
+        this.idx = idx;
+        this.ct = ct;
+        this.color = color;
+        this.type = type;
+        this.model = model;
+    }
+    Thing.prototype.draw = function(gl, pgm) {
+        var loc = gl.getUniformLocation(program, 'umodel');
+        gl.uniformMatrix4fv(loc, false, this.model);
+
+        loc = gl.getUniformLocation(pgm, 'ucolor');
+        gl.uniform4fv(loc, this.color);
+        gl.drawArrays(this.type, this.idx, this.ct);
+    };
+
     function main() {
         // compatibility boilerplate
         if(!window.WebGLRenderingContext) {
@@ -66,15 +87,30 @@
 
         // create game grid
         var grid = makeGrid(2, 100, 25, 4, 13);
-        var t = mat4.create();
-        mat4.translate(t, t, vec3.fromValues(75, 50, 0));
-        grid.transform(t);
-        pushData(gl, grid.flatten());
+        var gridColor = new Float32Array([1, 1, 0, 1]);
+        var model = mat4.create();
+        mat4.translate(model, model, vec3.fromValues(50, 50, 0));
+        var gridThing = new Thing(0, grid.count(), gridColor, gl.TRIANGLES, model);
+
+        var cube = makeCube(25);
+        var cubeColor = new Float32Array([0, 0.8, 0, 1]);
+        model = mat4.create();
+        mat4.translate(model, model, vec3.fromValues(50, 50, 25));
+        var cubeThing = new Thing(grid.count(), cube.count(), cubeColor, gl.TRIANGLES, model);
+
+        var wireframe = makeWireframeCube(25);
+        var wireframeColor = new Float32Array([1, 1, 1, 1]);
+        model = mat4.create();
+        mat4.translate(model, model, vec3.fromValues(50, 50, 25));
+        var wireframeThing = new Thing(gridThing.ct + cubeThing.ct, wireframe.count(), wireframeColor, gl.LINE_STRIP, model);
+
+        var geo = grid.union(cube, wireframe);
+        pushData(gl, geo.flatten());
         updateAttrib(gl, program, 'pos', 4);
 
-        loc = gl.getUniformLocation(program, 'ucolor');
-        gl.uniform4fv(loc, new Float32Array([1, 1, 0, 1]));
-        gl.drawArrays(gl.TRIANGLES, 0, grid.count());
+        gridThing.draw(gl, program);
+        cubeThing.draw(gl, program);
+        wireframeThing.draw(gl, program);
     }
 
     window.main = main;

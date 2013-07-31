@@ -29,6 +29,10 @@
     var grid;
     var thing;
 
+    function rangeCheck(x, y, z) {
+        return x >= 0 && x < BOARD_WIDTH && y >= 0 && y < BOARD_HEIGHT && z >= 0 && z < BOARD_DEPTH;
+    }
+
     /**
      * Low-level thing that can be drawn. includes an index and count
      * for the position vertex array, a color, a type (TRIANGLES,
@@ -40,6 +44,8 @@
         this.color = color;
         this.type = type;
         this.model = mat4.create();
+        // adjust into view on screen
+        mat4.translate(this.model, this.model, vec3.fromValues(50, 50, 0));
     }
     Thing.prototype.move = function(x, y, z) {
         var v = vec3.fromValues(x, y, z);
@@ -64,6 +70,9 @@
         this.wire.move(x * BLOCK_SIZE, y * BLOCK_SIZE, z * BLOCK_SIZE);
     }
     Block.prototype.move = function(x, y, z) {
+        if(!rangeCheck(this.x + x, this.y + y, this.z + z)) {
+            return;
+        }
         this.x += x;
         this.y += y;
         this.z += z;
@@ -132,7 +141,6 @@
         var cubeWireGeom = makeWireframeCube(BLOCK_SIZE); // ... and wireframe part
 
         grid = new Thing(0, gridGeom.count(), YELLOW, gl.TRIANGLES);
-        grid.move(BLOCK_SIZE * 2, BLOCK_SIZE * 2, 0);
 
         solidIndex = gridGeom.count();
         solidCount = cubeSolidGeom.count();
@@ -140,7 +148,6 @@
         wireCount = cubeWireGeom.count();
 
         thing = new Block(0, 0, 0, GREEN);
-        thing.move(2, 2, 1);
 
         // upload all the geometry
         var geometry = gridGeom.combine(cubeSolidGeom, cubeWireGeom);

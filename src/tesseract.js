@@ -1,6 +1,8 @@
 ;(function(window) {
     var gl;
     var program;
+
+    var gridThing;
     var cubeThing;
     var wireframeThing;
 
@@ -9,30 +11,6 @@
         window.mozRequestAnimationFrame ||
         window.webkitRequestAnimationFrame ||
         window.msRequestAnimationFrame;
-
-    function handle(evt) {
-        var v = vec3.create();
-
-        switch(evt.keyCode) {
-            case 87: /* W */ break;
-            case 83: /* S */ break;
-            case 65: /* A */ break;
-            case 68: /* D */ break;
-            case 81: /* Q */ break;
-            case 69: /* E */ break;
-
-            case 37: /* left */ v[0] = -25; break;
-            case 38: /* up */ v[2] = -25; break;
-            case 39: /* right */ v[0] = 25; break;
-            case 40: /* down  */ v[2] = 25; break;
-
-            default: // console.log(evt.keyCode);
-            break;
-        }
-
-        mat4.translate(cubeThing.model, cubeThing.model, v);
-        mat4.translate(wireframeThing.model, wireframeThing.model, v);
-    }
 
     /**
      * thing that can be drawn.
@@ -94,7 +72,7 @@
         var gridColor = new Float32Array([1, 1, 0, 1]);
         var model = mat4.create();
         mat4.translate(model, model, vec3.fromValues(50, 50, 0));
-        var gridThing = new Thing(0, grid.count(), gridColor, gl.TRIANGLES, model);
+        gridThing = new Thing(0, grid.count(), gridColor, gl.TRIANGLES, model);
 
         // create cube, includes filled part
         var cube = makeCube(25);
@@ -116,18 +94,47 @@
         updateAttrib(gl, program, 'pos', 4);
 
         document.body.addEventListener('keydown', handle);
+        draw();
+    }
 
-        function tick() {
-            gl.clearColor(0, 0, 0, 1);
-            gl.clear(gl.COLOR_BUFFER_BIT);
+    /**
+     * handle keydown events
+     */
+    function handle(evt) {
+        var v = vec3.create();
 
-            gridThing.draw(gl, program);
-            cubeThing.draw(gl, program);
-            wireframeThing.draw(gl, program);
+        switch(evt.keyCode) {
+            case 87: /* W */ break;
+            case 83: /* S */ break;
+            case 65: /* A */ break;
+            case 68: /* D */ break;
+            case 81: /* Q */ break;
+            case 69: /* E */ break;
 
-            requestAnimationFrame(tick);
+            case 37: /* left */ v[0] = -25; break;
+            case 38: /* up */ v[2] = -25; break;
+            case 39: /* right */ v[0] = 25; break;
+            case 40: /* down  */ v[2] = 25; break;
+
+            default: // console.log(evt.keyCode);
+            break;
         }
-        tick();
+        mat4.translate(cubeThing.model, cubeThing.model, v);
+        mat4.translate(wireframeThing.model, wireframeThing.model, v);
+    }
+
+    /**
+     * draw the whole scene, then loop via requestAnimationFrame
+     */
+    function draw() {
+        gl.clearColor(0, 0, 0, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        gridThing.draw(gl, program);
+        cubeThing.draw(gl, program);
+        wireframeThing.draw(gl, program);
+
+        requestAnimationFrame(draw);
     }
 
     window.main = main;

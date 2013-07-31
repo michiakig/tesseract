@@ -17,6 +17,13 @@
     var GREEN = new Float32Array([0, 0.8, 0, 1]);
     var WHITE = new Float32Array([1, 1, 1, 1]);
 
+    function randColor() {
+        var r = Math.random();
+        var g = Math.random();
+        var b = Math.random();
+        return new Float32Array([r, g, b, 1]);
+    }
+
     // individual grid lines dims in px
     var GRID_THICKNESS = 2;
 

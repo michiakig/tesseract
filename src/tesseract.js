@@ -395,12 +395,21 @@
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         grid.draw(gl, program);
-        board.forEach(function(block) {
-            if(block) {
-                block.draw(gl, program);
+        for(var y = 0; y < board.h; y++) {
+            for(var z = 0; z < board.d; z++) {
+                for(var x = 0; x < board.w; x++) {
+                    if(board.get(x, y, z)) {
+                        board.get(x, y, z).draw(gl, program);
+                    } else {
+                        for(var i in piece.blocks) {
+                            if(piece.blocks[i].pos[0] === x && piece.blocks[i].pos[1] === y && piece.blocks[i].pos[2] === z) {
+                                piece.blocks[i].draw(gl, program);
+                            }
+                        }
+                    }
+                }
             }
-        });
-        piece.draw(gl, program);
+        }
 
         requestAnimationFrame(draw);
     }

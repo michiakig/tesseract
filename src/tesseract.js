@@ -37,10 +37,6 @@
     var board; // game board (actual data, dynamically updated)
     var piece; // currently "live" piece
 
-    function rangeCheck(x, y, z) {
-        var inside = x >= 0 && x < BOARD_WIDTH && y >= 0 && y < BOARD_HEIGHT && z >= 0 && z < BOARD_DEPTH;
-        return inside && !board.get(x, y, z);
-    }
 
     /**
      * Low-level thing that can be drawn. includes an index and count
@@ -69,19 +65,18 @@
         gl.drawArrays(this.type, this.index, this.count);
     };
 
-    function Block(x, y, z, color) {
-        this.x = x;
-        this.y = y;
-        this.z = z;
-        this.solid = new Thing(solidIndex, solidCount, color, WebGLRenderingContext.TRIANGLES);
+    function Block(pos, color) {
+        this.pos = pos;
+        this.color = color;
+        this.solid = new Thing(solidIndex, solidCount, this.color, WebGLRenderingContext.TRIANGLES);
         this.wire = new Thing(wireIndex, wireCount, WHITE, WebGLRenderingContext.LINE_STRIP);
-        this.solid.move(x * BLOCK_SIZE, y * BLOCK_SIZE, z * BLOCK_SIZE);
-        this.wire.move(x * BLOCK_SIZE, y * BLOCK_SIZE, z * BLOCK_SIZE);
+        this.solid.move(pos[0] * BLOCK_SIZE, pos[1] * BLOCK_SIZE, pos[2] * BLOCK_SIZE);
+        this.wire.move(pos[0] * BLOCK_SIZE, pos[1] * BLOCK_SIZE, pos[2] * BLOCK_SIZE);
     }
     Block.prototype.move = function(x, y, z) {
-        this.x += x;
-        this.y += y;
-        this.z += z;
+        this.pos[0] += x;
+        this.pos[1] += y;
+        this.pos[2] += z;
         this.solid.move(x * BLOCK_SIZE, y * BLOCK_SIZE, z * BLOCK_SIZE);
         this.wire.move(x * BLOCK_SIZE, y * BLOCK_SIZE, z * BLOCK_SIZE);
     };
@@ -90,20 +85,27 @@
         this.wire.draw(gl, program);
     };
 
-    function Piece(things) {
-        this.things = things;
-    }
-    Piece.prototype.add = function(thing) {
-        this.things.push(thing);
-    };
-    Piece.prototype.move = function(x, y, z) {
-        this.things.forEach(function(thing) {
-            thing.move(x, y, z);
+    function Piece(base, offsets, color) {
+        this.base = base;
+        this.offsets = offsets;
+        this.color = color;
+        this.blocks = offsets.map(function(off) {
+            var pos = vec4.clone(base);
+            vec4.add(pos, pos, off);
+            return new Block(pos, color);
         });
+    }
+    Piece.prototype.move = function(x, y, z) {
+        this.blocks.forEach(function(block) {
+            block.move(x, y, z);
+        });
+        this.base.x += x;
+        this.base.y += y;
+        this.base.z += z;
     };
-    Piece.prototype.draw = function(gl, pgm) {
-        this.things.forEach(function(thing) {
-            thing.draw(gl, pgm);
+    Piece.prototype.draw = function(gl, program) {
+        this.blocks.forEach(function(block) {
+            block.draw(gl, program);
         });
     };
 
@@ -123,11 +125,29 @@
         }
         this.board = board;
     }
+    Board.prototype.rangeCheck = function(piece) {
+        for(var i in piece.blocks) {
+            var block = piece.blocks[i];
+            var outside = block.pos[0] < 0 || block.pos[0] >= BOARD_WIDTH || block.pos[1] < 0 || block.pos[1] >= BOARD_HEIGHT || block.pos[2] < 0 || block.pos[2] >= BOARD_DEPTH;
+            if(outside || board.get(block.pos[0], block.pos[1], block.pos[2])) {
+                return false;
+            }
+        }
+
+        return true;
+    };
     Board.prototype.get = function(x, y, z) {
         return this.board[y][x][z];
     };
     Board.prototype.set = function(x, y, z, thing) {
         this.board[y][x][z] = thing;
+    };
+
+    Board.prototype.addPiece = function(piece) {
+        var that = this;
+        piece.blocks.forEach(function(block) {
+            that.set(block.pos[0], block.pos[1], block.pos[2], block);
+        });
     };
 
     /**
@@ -234,8 +254,7 @@
         wireCount = cubeWireGeom.count();
 
         board = new Board(BOARD_WIDTH, BOARD_DEPTH, BOARD_HEIGHT);
-        piece = new Block(0, BOARD_HEIGHT-1, 0, randColor());
-        board.set(0, BOARD_HEIGHT-1, 0, piece);
+        piece = new Piece(vec3.fromValues(0, BOARD_HEIGHT-1, 0), [vec3.fromValues(0, 0, 0), vec3.fromValues(1, 0, 0), vec3.fromValues(0, 1, 0)], randColor());
 
         // upload all the geometry
         var geometry = gridGeom.combine(cubeSolidGeom, cubeWireGeom);
@@ -269,10 +288,9 @@
             default: // console.log(evt.keyCode);
             break;
         }
-        if(rangeCheck(piece.x + x, piece.y + y, piece.z + z)) {
-            board.set(piece.x, piece.y, piece.z, undefined);
-            piece.move(x, y, z);
-            board.set(piece.x, piece.y, piece.z, piece);
+        piece.move(x, y, z);
+        if(!board.rangeCheck(piece)) {
+            piece.move(-x, -y, -z);
         }
     }
 
@@ -280,12 +298,12 @@
      * update the game state
      */
     function update() {
-        // move the piece down, if possible
-        if(rangeCheck(piece.x, piece.y - 1, piece.z)) {
-            board.set(piece.x, piece.y, piece.z, undefined);
-            piece.move(0, -1, 0);
-            board.set(piece.x, piece.y, piece.z, piece);
-        } else { // else the piece is at rest, create a new piece, check for cleared level
+        // try to move the piece down
+        piece.move(0, -1, 0);
+        if(!board.rangeCheck(piece)) {
+            piece.move(0, 1, 0);
+            board.addPiece(piece);
+
             for(var y = 0; y < BOARD_HEIGHT; ) {
                 if(board.checkLevel(y)) {
                     console.log('deleting level ' + y);
@@ -294,8 +312,7 @@
                     y++;
                 }
             }
-            piece = new Block(0, BOARD_HEIGHT-1, 0, randColor());
-            board.set(0, BOARD_HEIGHT-1, 0, piece);
+            piece = new Piece(vec3.fromValues(0, BOARD_HEIGHT-1, 0), [vec3.fromValues(0, 0, 0), vec3.fromValues(1, 0, 0), vec3.fromValues(0, 1, 0)], randColor());
         }
     }
 
@@ -312,6 +329,7 @@
                 block.draw(gl, program);
             }
         });
+        piece.draw(gl, program);
 
         requestAnimationFrame(draw);
     }

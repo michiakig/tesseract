@@ -10,8 +10,8 @@
 
     // board dims in blocks
     var BOARD_HEIGHT = 13;
-    var BOARD_WIDTH = 4;
-    var BOARD_DEPTH = 4;
+    var BOARD_WIDTH = 2;
+    var BOARD_DEPTH = 2;
 
     var YELLOW = new Float32Array([1, 1, 0, 1]);
     var GREEN = new Float32Array([0, 0.8, 0, 1]);
@@ -33,19 +33,13 @@
     // gl context and compiled shader program
     var gl, program;
 
-    var grid; // game grid lines, static
+    var grid; // game grid lines (static background)
+    var board; // game board (actual data, dynamically updated)
     var piece; // currently "live" piece
-    var blocks; // "dead" blocks
 
     function rangeCheck(x, y, z) {
         var inside = x >= 0 && x < BOARD_WIDTH && y >= 0 && y < BOARD_HEIGHT && z >= 0 && z < BOARD_DEPTH;
-        var notCollide = true;
-        blocks.forEach(function(block) {
-            if(block.x == x && block.y == y && block.z == z) {
-                notCollide = false;
-            }
-        });
-        return inside && notCollide;
+        return inside && !board.get(x, y, z);
     }
 
     /**
@@ -85,9 +79,6 @@
         this.wire.move(x * BLOCK_SIZE, y * BLOCK_SIZE, z * BLOCK_SIZE);
     }
     Block.prototype.move = function(x, y, z) {
-        if(!rangeCheck(this.x + x, this.y + y, this.z + z)) {
-            return;
-        }
         this.x += x;
         this.y += y;
         this.z += z;
@@ -114,6 +105,85 @@
         this.things.forEach(function(thing) {
             thing.draw(gl, pgm);
         });
+    };
+
+    /**
+     * 3-dimensional game board
+     */
+    function Board(w, d, h) {
+        this.w = w;
+        this.d = d;
+        this.h = h;
+        var board = new Array(h);
+        for(var i = 0; i < h; i++) {
+            board[i] = new Array(w);
+            for(var j = 0; j < w; j++) {
+                board[i][j] = new Array(d);
+            }
+        }
+        this.board = board;
+    }
+    Board.prototype.get = function(x, y, z) {
+        return this.board[y][x][z];
+    };
+    Board.prototype.set = function(x, y, z, thing) {
+        this.board[y][x][z] = thing;
+    };
+
+    /**
+     * Call fn on each block, in the order from bottom to top, back to
+     * front, left to right
+     */
+    Board.prototype.forEach = function(fn) {
+        for(var y = 0; y < this.h; y++) {
+            for(var z = 0; z < this.d; z++) {
+                for(var x = 0; x < this.w; x++) {
+                    fn(this.get(x, y, z));
+                }
+            }
+        }
+    };
+    /**
+     * Returns true if this level is filled
+     */
+    Board.prototype.checkLevel = function(i) {
+        var level = this.board[i];
+        for(var x = 0; x < this.w; x++) {
+            for(var z = 0; z < this.d; z++) {
+                if(!level[x][z]) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    };
+    /**
+     * Delete a level and move levels above it down
+     */
+    Board.prototype.deleteLevel = function(i) {
+        this.board[i] = this.board[i + 1];
+        for(var k = 0; k < this.board[i].length; k++) {
+            for(var l = 0; l < this.board[i][k].length; l++) {
+                if(this.board[i][k][l]) {
+                    this.board[i][k][l].move(0, -1, 0);
+                }
+            }
+        }
+
+        for(var j = i + 1; j < this.h - 1; j++) {
+            this.board[j] = this.board[j + 1];
+            for(k = 0; k < this.board[j].length; k++) {
+                for(l = 0; l < this.board[j][k].length; l++) {
+                    if(this.board[j][k][l]) {
+                        this.board[j][k][l].move(0, -1, 0);
+                    }
+                }
+            }
+        }
+        this.board[this.h - 1] = new Array(this.w);
+        for(var x = 0; x < this.w; x++) {
+            this.board[this.h - 1][x] = new Array(this.d);
+        }
     };
 
     function main() {
@@ -163,9 +233,9 @@
         wireIndex = gridGeom.count() + cubeSolidGeom.count();
         wireCount = cubeWireGeom.count();
 
+        board = new Board(BOARD_WIDTH, BOARD_DEPTH, BOARD_HEIGHT);
         piece = new Block(0, BOARD_HEIGHT-1, 0, randColor());
-
-        blocks = [piece];
+        board.set(0, BOARD_HEIGHT-1, 0, piece);
 
         // upload all the geometry
         var geometry = gridGeom.combine(cubeSolidGeom, cubeWireGeom);
@@ -199,28 +269,10 @@
             default: // console.log(evt.keyCode);
             break;
         }
-        piece.move(x, y, z);
-    }
-
-    /**
-     * compare two blocks based on position, front to back, left to
-     * right, bottom to top
-     */
-    function compare (a, b) {
-        if(a.z < b.z) {
-            return -1;
-        } else if(a.z > b.z) {
-            return 1;
-        } else if(a.x < b.x) {
-            return -1;
-        } else if(a.x > b.x) {
-            return 1;
-        } else if(a.y < b.y) {
-            return -1;
-        } else if(a.y > b.y) {
-            return 1;
-        } else {
-            return 0;
+        if(rangeCheck(piece.x + x, piece.y + y, piece.z + z)) {
+            board.set(piece.x, piece.y, piece.z, undefined);
+            piece.move(x, y, z);
+            board.set(piece.x, piece.y, piece.z, piece);
         }
     }
 
@@ -228,13 +280,22 @@
      * update the game state
      */
     function update() {
+        // move the piece down, if possible
         if(rangeCheck(piece.x, piece.y - 1, piece.z)) {
-            piece.move(0,-1,0);
-            blocks.sort(compare);
-        } else {
+            board.set(piece.x, piece.y, piece.z, undefined);
+            piece.move(0, -1, 0);
+            board.set(piece.x, piece.y, piece.z, piece);
+        } else { // else the piece is at rest, create a new piece, check for cleared level
+            for(var y = 0; y < BOARD_HEIGHT; ) {
+                if(board.checkLevel(y)) {
+                    console.log('deleting level ' + y);
+                    board.deleteLevel(y);
+                } else {
+                    y++;
+                }
+            }
             piece = new Block(0, BOARD_HEIGHT-1, 0, randColor());
-            blocks[blocks.length] = piece;
-            blocks.sort(compare);
+            board.set(0, BOARD_HEIGHT-1, 0, piece);
         }
     }
 
@@ -246,9 +307,10 @@
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         grid.draw(gl, program);
-
-        blocks.forEach(function(block) {
-            block.draw(gl, program);
+        board.forEach(function(block) {
+            if(block) {
+                block.draw(gl, program);
+            }
         });
 
         requestAnimationFrame(draw);

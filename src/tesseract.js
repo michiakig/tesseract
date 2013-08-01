@@ -10,8 +10,8 @@
 
     // board dims in blocks
     var BOARD_HEIGHT = 13;
-    var BOARD_WIDTH = 2;
-    var BOARD_DEPTH = 2;
+    var BOARD_WIDTH = 4;
+    var BOARD_DEPTH = 4;
 
     var YELLOW = new Float32Array([1, 1, 0, 1]);
     var GREEN = new Float32Array([0, 0.8, 0, 1]);
@@ -85,28 +85,82 @@
         this.wire.draw(gl, program);
     };
 
+    /**
+     * compare two blocks based on position, front to back, left to
+     * right, bottom to top
+     */
+    function compare(a, b) {
+        var ax = a.pos[0];
+        var ay = a.pos[1];
+        var az = a.pos[2];
+        var bx = b.pos[0];
+        var by = b.pos[1];
+        var bz = b.pos[2];
+        if(az < bz) {
+            return -1;
+        } else if(az > bz) {
+            return 1;
+        } else if(ax < bx) {
+            return -1;
+        } else if(ax > bx) {
+            return 1;
+        } else if(ay < by) {
+            return -1;
+        } else if(ay > by) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
     function Piece(base, offsets, color) {
         this.base = base;
         this.offsets = offsets;
         this.color = color;
-        this.blocks = offsets.map(function(off) {
-            var pos = vec4.clone(base);
-            vec4.add(pos, pos, off);
-            return new Block(pos, color);
-        });
+        this.makeBlocks();
     }
+    Piece.prototype.makeBlocks = function() {
+        this.blocks = this.offsets.map(function(off) {
+            var pos = vec4.clone(this.base);
+            vec4.add(pos, pos, off);
+            return new Block(pos, this.color);
+        }.bind(this));
+        this.blocks.sort(compare);
+    };
     Piece.prototype.move = function(x, y, z) {
         this.blocks.forEach(function(block) {
             block.move(x, y, z);
         });
-        this.base.x += x;
-        this.base.y += y;
-        this.base.z += z;
+        this.base[0] += x;
+        this.base[1] += y;
+        this.base[2] += z;
     };
     Piece.prototype.draw = function(gl, program) {
         this.blocks.forEach(function(block) {
             block.draw(gl, program);
         });
+    };
+    Piece.prototype.rotateZ = function() {
+        var mat = mat4.create();
+        mat4.rotateZ(mat, mat, Math.PI/2);
+        this.offsets.forEach(function(offset) {
+            vec3.transformMat4(offset, offset, mat);
+            for(var i = 0; i < offset.length; i++) {
+                offset[i] = Math.round(offset[i]);
+            }
+        });
+        this.makeBlocks();
+    };
+    Piece.prototype.rotateX = function() {
+        var mat = mat4.create();
+        mat4.rotateX(mat, mat, Math.PI/2);
+        this.offsets.forEach(function(offset) {
+            vec3.transformMat4(offset, offset, mat);
+            for(var i = 0; i < offset.length; i++) {
+                offset[i] = Math.round(offset[i]);
+            }
+        });
+        this.makeBlocks();
     };
 
     /**
@@ -275,10 +329,28 @@
         switch(evt.keyCode) {
             case 87: /* W */ y = 1; break;
             case 83: /* S */ y = -1; break;
-            case 65: /* A */ break;
+            case 65: /* A */ update(); break;
             case 68: /* D */ break;
             case 81: /* Q */ break;
             case 69: /* E */ break;
+
+            case 90: /* Z */
+                piece.rotateZ();
+                if(!board.rangeCheck(piece)) {
+                    piece.rotateZ();
+                    piece.rotateZ();
+                    piece.rotateZ();
+                }
+                break;
+
+            case 88: /* X */
+                piece.rotateX();
+                if(!board.rangeCheck(piece)) {
+                    piece.rotateX();
+                    piece.rotateX();
+                    piece.rotateX();
+                }
+            break;
 
             case 37: /* left */  x = -1; break;
             case 38: /* up */    z = -1; break;
@@ -306,7 +378,6 @@
 
             for(var y = 0; y < BOARD_HEIGHT; ) {
                 if(board.checkLevel(y)) {
-                    console.log('deleting level ' + y);
                     board.deleteLevel(y);
                 } else {
                     y++;

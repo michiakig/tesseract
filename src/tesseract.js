@@ -10,8 +10,8 @@
 
     // board dims in blocks
     var BOARD_HEIGHT = 13;
-    var BOARD_WIDTH = 4;
-    var BOARD_DEPTH = 4;
+    var BOARD_WIDTH = 5;
+    var BOARD_DEPTH = 5;
 
     var YELLOW = new Float32Array([1, 1, 0, 1]);
     var GREEN = new Float32Array([0, 0.8, 0, 1]);
@@ -37,6 +37,46 @@
     var board; // game board (actual data, dynamically updated)
     var piece; // currently "live" piece
 
+    function makeOffsets(w, d, h) {
+        var res = [];
+        var origin = vec3.fromValues(0, 0, 0);
+        res.push(origin);
+        for(var x = 0; x < w; x++) {
+            for(var y = 0; y < h; y++) {
+                for(var z = 0; z < d; z++) {
+                    res.push(vec3.fromValues(x - Math.floor(w/2), y - Math.floor(h/2), z - Math.floor(d/2)));
+                }
+            }
+        }
+        return res;
+    }
+
+    var pieceOffsets = [
+        makeOffsets(1, 1, 1),
+        makeOffsets(2, 1, 1),
+        makeOffsets(3, 1, 1),
+        makeOffsets(4, 1, 1),
+
+        makeOffsets(2, 2, 1),
+        makeOffsets(2, 2, 2),
+        makeOffsets(3, 2, 2)
+    ];
+
+    var pieceColors = [
+        [0.8,0,0.8,1],
+        [0,0,0.8,1],
+        [0,0.8,0,1],
+        [0.9,0.26,0.07,1],
+
+        [0.8,0,0,1],
+        [0.9,0.8,0.1,1],
+        [0.8,0,0.8,1]
+
+    ].map(function(offset){ return vec4.fromValues.apply(vec4, offset); });
+
+    function makePiece(shape, base) {
+        return new Piece(base, pieceOffsets[shape], pieceColors[shape]);
+    }
 
     /**
      * Low-level thing that can be drawn. includes an index and count
@@ -308,7 +348,9 @@
         wireCount = cubeWireGeom.count();
 
         board = new Board(BOARD_WIDTH, BOARD_DEPTH, BOARD_HEIGHT);
-        piece = new Piece(vec3.fromValues(0, BOARD_HEIGHT-1, 0), [vec3.fromValues(0, 0, 0), vec3.fromValues(1, 0, 0), vec3.fromValues(0, 1, 0)], randColor());
+        var next = Math.floor(Math.random() * pieceOffsets.length);
+        var offsets = pieceOffsets[next];
+        piece = new Piece(vec3.fromValues(3, BOARD_HEIGHT-3, 2), pieceOffsets[next], pieceColors[next]);
 
         // upload all the geometry
         var geometry = gridGeom.combine(cubeSolidGeom, cubeWireGeom);
@@ -383,7 +425,9 @@
                     y++;
                 }
             }
-            piece = new Piece(vec3.fromValues(0, BOARD_HEIGHT-1, 0), [vec3.fromValues(0, 0, 0), vec3.fromValues(1, 0, 0), vec3.fromValues(0, 1, 0)], randColor());
+            var next = Math.floor(Math.random() * pieceOffsets.length);
+            var offsets = pieceOffsets[next];
+            piece = new Piece(vec3.fromValues(3, BOARD_HEIGHT-3, 2), pieceOffsets[next], pieceColors[next]);
         }
     }
 

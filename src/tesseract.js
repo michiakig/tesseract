@@ -180,9 +180,7 @@
             block.draw(gl, program);
         });
     };
-    Piece.prototype.rotateZ = function() {
-        var mat = mat4.create();
-        mat4.rotateZ(mat, mat, Math.PI/2);
+    Piece.prototype.transformMat4 = function(mat) {
         this.offsets.forEach(function(offset) {
             vec3.transformMat4(offset, offset, mat);
             for(var i = 0; i < offset.length; i++) {
@@ -191,16 +189,46 @@
         });
         this.makeBlocks();
     };
-    Piece.prototype.rotateX = function() {
+    Piece.prototype.rotate = function(dir) {
+        if(arguments.length < 1) {
+            dir = 1;
+        }
+        switch(this.rotation % 3) {
+            case 0: this.rotateX(dir); break;
+            case 1: this.rotateY(dir); break;
+            case 2: this.rotateZ(dir); break;
+            default:
+               throw new Error("Assertion failed, should never happen");
+               break;
+        }
+        this.rotation++;
+    };
+    Piece.prototype.rotateX = function(dir) {
+        if(arguments.length < 1) {
+            dir = 1;
+        }
+        console.log('rotateX');
         var mat = mat4.create();
-        mat4.rotateX(mat, mat, Math.PI/2);
-        this.offsets.forEach(function(offset) {
-            vec3.transformMat4(offset, offset, mat);
-            for(var i = 0; i < offset.length; i++) {
-                offset[i] = Math.round(offset[i]);
-            }
-        });
-        this.makeBlocks();
+        mat4.rotateX(mat, mat, dir * Math.PI/2);
+        this.transformMat4(mat);
+    };
+    Piece.prototype.rotateY = function(dir) {
+        if(arguments.length < 1) {
+            dir = 1;
+        }
+        console.log('rotateY');
+        var mat = mat4.create();
+        mat4.rotateY(mat, mat, dir * Math.PI/2);
+        this.transformMat4(mat);
+    };
+    Piece.prototype.rotateZ = function(dir) {
+        if(arguments.length < 1) {
+            dir = 1;
+        }
+        console.log('rotateZ');
+        var mat = mat4.create();
+        mat4.rotateZ(mat, mat, dir * Math.PI/2);
+        this.transformMat4(mat);
     };
 
     /**
@@ -376,21 +404,31 @@
             case 81: /* Q */ break;
             case 69: /* E */ break;
 
-            case 90: /* Z */
-                piece.rotateZ();
+            case 86: /* V */
+                piece.rotate(1);
                 if(!board.rangeCheck(piece)) {
-                    piece.rotateZ();
-                    piece.rotateZ();
-                    piece.rotateZ();
+                    piece.rotate(-1);
+                }
+                break;
+
+            case 90: /* Z */
+                piece.rotateZ(1);
+                if(!board.rangeCheck(piece)) {
+                    piece.rotateZ(-1);
+                }
+                break;
+
+            case 67: /* C */
+                piece.rotateY();
+                if(!board.rangeCheck(piece)) {
+                    piece.rotateY();
                 }
                 break;
 
             case 88: /* X */
-                piece.rotateX();
+                piece.rotateX(1);
                 if(!board.rangeCheck(piece)) {
-                    piece.rotateX();
-                    piece.rotateX();
-                    piece.rotateX();
+                    piece.rotateX(-1);
                 }
             break;
 

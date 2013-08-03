@@ -404,6 +404,13 @@
             case 81: /* Q */ break;
             case 69: /* E */ break;
 
+            case 32: /* Space */
+                while(board.rangeCheck(piece)) {
+                    piece.move(0, -1, 0);
+                }
+                piece.move(0, 1, 0);
+                break;
+
             case 86: /* V */
                 piece.rotate(1);
                 if(!board.rangeCheck(piece)) {

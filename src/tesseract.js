@@ -158,6 +158,7 @@
         this.offsets = offsets;
         this.color = color;
         this.makeBlocks();
+        this.rotation = 0;
     }
     Piece.prototype.makeBlocks = function() {
         this.blocks = this.offsets.map(function(off) {

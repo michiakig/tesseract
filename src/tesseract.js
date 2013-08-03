@@ -191,8 +191,8 @@
         this.makeBlocks();
     };
     Piece.prototype.rotate = function(dir) {
-        if(arguments.length < 1) {
-            dir = 1;
+        if(dir < 0) {
+            this.rotation--;
         }
         switch(this.rotation % 3) {
             case 0: this.rotateX(dir); break;
@@ -202,13 +202,15 @@
                throw new Error("Assertion failed, should never happen");
                break;
         }
-        this.rotation++;
+        if(dir > 0) {
+            this.rotation++;
+        }
     };
     Piece.prototype.rotateX = function(dir) {
         if(arguments.length < 1) {
             dir = 1;
         }
-        console.log('rotateX');
+        console.log('rotateX('+dir+')');
         var mat = mat4.create();
         mat4.rotateX(mat, mat, dir * Math.PI/2);
         this.transformMat4(mat);
@@ -414,8 +416,8 @@
 
             case 86: /* V */
                 piece.rotate(1);
-                if(!board.rangeCheck(piece)) {
-                    piece.rotate(-1);
+                while(!board.rangeCheck(piece)) {
+                    piece.rotate(1);
                 }
                 break;
 

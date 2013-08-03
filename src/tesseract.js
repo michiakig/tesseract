@@ -44,7 +44,7 @@
         for(var x = 0; x < w; x++) {
             for(var y = 0; y < h; y++) {
                 for(var z = 0; z < d; z++) {
-                    res.push(vec3.fromValues(x - Math.floor(w/2), y - Math.floor(h/2), z - Math.floor(d/2)));
+                    res.push(vec3.fromValues(x, y, z));
                 }
             }
         }

@@ -514,6 +514,10 @@
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         grid.draw(gl, program);
+        // after drawing the grid, draw the field of frozen pieces along with the live piece
+        // draw from back to front, left to right, bottom to top.
+        // interleave drawing the blocks in the live piece with the field
+        // *should* be greatly able to simplify this logic and use WebGL depth buffer
         for(var y = 0; y < board.h; y++) {
             for(var z = 0; z < board.d; z++) {
                 for(var x = 0; x < board.w; x++) {

@@ -190,9 +190,6 @@
         }
     };
     Piece.prototype.rotateX = function(dir) {
-        if(arguments.length < 1) {
-            dir = 1;
-        }
         console.log('rotateX('+dir+')');
         var mat = mat4.create();
         mat4.rotateX(mat, mat, dir * Math.PI/2);
@@ -201,9 +198,6 @@
         return true;
     };
     Piece.prototype.rotateY = function(dir) {
-        if(arguments.length < 1) {
-            dir = 1;
-        }
         console.log('rotateY('+dir+')');
         var mat = mat4.create();
         mat4.rotateY(mat, mat, dir * Math.PI/2);
@@ -212,9 +206,6 @@
         return true;
     };
     Piece.prototype.rotateZ = function(dir) {
-        if(arguments.length < 1) {
-            dir = 1;
-        }
         console.log('rotateZ('+dir+')');
         var mat = mat4.create();
         mat4.rotateZ(mat, mat, dir * Math.PI/2);

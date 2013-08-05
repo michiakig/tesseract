@@ -406,7 +406,8 @@
         document.body.addEventListener('keydown', handle);
         draw();
 
-        setInterval(update, 500);
+        update.intervalID = setInterval(update, 500);
+        update.intervalOn = true;
     }
 
     /**

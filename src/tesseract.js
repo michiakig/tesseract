@@ -5,6 +5,9 @@
             window.webkitRequestAnimationFrame ||
             window.msRequestAnimationFrame;
 
+    var WORLD_OFFSET_X = 150;
+    var WORLD_OFFSET_Y = 50;
+
     // block dims in px
     var BLOCK_SIZE = 25;
 
@@ -68,7 +71,7 @@
         this.type = type;
         this.model = mat4.create();
         // adjust into view on screen
-        mat4.translate(this.model, this.model, vec3.fromValues(50, 50, 0));
+        mat4.translate(this.model, this.model, vec3.fromValues(WORLD_OFFSET_X, WORLD_OFFSET_Y, 0));
     }
     Thing.prototype.move = function(x, y, z) {
         var v = vec3.fromValues(x, y, z);

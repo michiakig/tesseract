@@ -37,6 +37,8 @@
     var piece; // currently "live" piece
     var guide; // helpful guides at the top of the grid, to help orient the board and piece
 
+    var layers = 0;
+
     var shapes = [
         {w: 1, d: 1, h: 1, c: PURPLE},
         {w: 1, d: 1, h: 2, c: BLUE},
@@ -593,10 +595,14 @@
             for(var y = 0; y < BOARD_HEIGHT; ) {
                 if(board.checkLevel(y)) {
                     board.deleteLevel(y);
+                    layers++;
                 } else {
                     y++;
                 }
             }
+            var score = document.getElementById('score');
+            score.innerHTML = 'layers: ' + layers;
+
             piece = randomPiece();
             guide = makeGuide(piece);
             if(!board.rangeCheck(piece)) { // new piece collides, game over

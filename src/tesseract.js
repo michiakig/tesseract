@@ -37,12 +37,12 @@
 
     var shapes = [
         {w: 1, d: 1, h: 1, c: PURPLE},
-        {w: 2, d: 1, h: 1, c: BLUE},
-        {w: 3, d: 1, h: 1, c: GREEN},
-        {w: 4, d: 1, h: 1, c: ORANGE1},
+        {w: 1, d: 1, h: 2, c: BLUE},
+        {w: 1, d: 1, h: 3, c: GREEN},
+        {w: 1, d: 1, h: 4, c: ORANGE1},
         {w: 2, d: 2, h: 1, c: RED},
         {w: 2, d: 2, h: 2, c: DARK_YELLOW},
-        {w: 3, d: 2, h: 2, c: PURPLE}
+        {w: 2, d: 2, h: 3, c: PURPLE}
     ];
 
     /**
@@ -178,9 +178,9 @@
             this.rotation--;
         }
         switch(this.rotation % 3) {
-            case 0: this.rotateX(dir); break;
+            case 0: this.rotateZ(dir); break;
             case 1: this.rotateY(dir); break;
-            case 2: this.rotateZ(dir); break;
+            case 2: this.rotateX(dir); break;
             default:
                throw new Error("Assertion failed, should never happen");
                break;

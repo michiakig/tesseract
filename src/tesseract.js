@@ -410,21 +410,24 @@
         update.intervalOn = true;
     }
 
+    function pause() {
+        if(update.intervalOn) {
+            clearInterval(update.intervalID);
+            update.intervalOn = false;
+        } else {
+            update.intervalID = setInterval(update, 500);
+            update.intervalOn = true;
+        }
+    }
+
     /**
      * handle keydown events
      */
     function handle(evt) {
         var x = 0, y = 0, z = 0;
         switch(evt.keyCode) {
-            case 80: /* P */
-               if(update.intervalOn) {
-                   clearInterval(update.intervalID);
-                   update.intervalOn = false;
-               } else {
-                   update.intervalID = setInterval(update, 500);
-                   update.intervalOn = true;
-               }
-               break;
+            case 80: /* P */ pause(); break;
+
             case 16: /* Shift */
                piece = randomPiece();
                break;
@@ -503,6 +506,11 @@
                 }
             }
             piece = randomPiece();
+            if(!board.rangeCheck(piece)) { // new piece collides, game over
+                pause();
+                var status = document.getElementById('status');
+                status.innerHTML = 'game over!';
+            }
         }
     }
 

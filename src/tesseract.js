@@ -27,6 +27,7 @@
 
     // indices into vertex attribute array (positions)
     var solidIndex, solidCount, wireIndex, wireCount;
+    var guideBackIndex, guideBackCount, guideSideIndex, guideSideCount;
 
     // gl context and compiled shader program
     var gl, program;
@@ -34,6 +35,7 @@
     var grid; // game grid lines (static background)
     var board; // game board (actual data, dynamically updated)
     var piece; // currently "live" piece
+    var guide; // helpful guides at the top of the grid, to help orient the board and piece
 
     var shapes = [
         {w: 1, d: 1, h: 1, c: PURPLE},
@@ -44,6 +46,13 @@
         {w: 2, d: 2, h: 2, c: DARK_YELLOW},
         {w: 2, d: 2, h: 3, c: PURPLE}
     ];
+
+    var debug = false;
+    function log(s) {
+        if(debug) {
+            console.log(s);
+        }
+    }
 
     /**
      * Low-level thing that can be drawn. includes an index and count
@@ -70,6 +79,38 @@
         loc = gl.getUniformLocation(pgm, 'ucolor');
         gl.uniform4fv(loc, this.color);
         gl.drawArrays(this.type, this.index, this.count);
+    };
+
+    function Guide(pos, w, d) {
+        this.sides = [];
+        this.backs = [];
+        var thing;
+        for(var i = 0; i < w; i++) {
+            thing = new Thing(guideBackIndex, guideBackCount, WHITE, WebGLRenderingContext.TRIANGLES);
+            thing.move(BLOCK_SIZE * (pos[0] + i), BLOCK_SIZE * pos[1], 0);
+            this.backs.push(thing);
+        }
+        for(var j = 0; j < d; j++) {
+            thing = new Thing(guideSideIndex, guideSideCount, WHITE, WebGLRenderingContext.TRIANGLES);
+            thing.move(0, BLOCK_SIZE * pos[1], BLOCK_SIZE * (pos[2] + j));
+            this.sides.push(thing);
+        }
+    }
+    Guide.prototype.draw = function(gl, program) {
+        this.backs.forEach(function(back){
+            back.draw(gl, program);
+        });
+        this.sides.forEach(function(side){
+            side.draw(gl, program);
+        });
+    };
+    Guide.prototype.move = function(x, y, z) {
+        this.backs.forEach(function(back){
+            back.move(x * BLOCK_SIZE, 0, 0);
+        });
+        this.sides.forEach(function(side){
+            side.move(0, 0, z * BLOCK_SIZE);
+        });
     };
 
     function Block(pos, color) {
@@ -174,6 +215,7 @@
         this.makeBlocks();
     };
     Piece.prototype.rotate = function(dir) {
+        log('rotate('+dir+')');
         if(dir < 0) {
             this.rotation--;
         }
@@ -190,7 +232,7 @@
         }
     };
     Piece.prototype.rotateX = function(dir) {
-        console.log('rotateX('+dir+')');
+        log('rotateX('+dir+')');
         var mat = mat4.create();
         mat4.rotateX(mat, mat, dir * Math.PI/2);
         this.transformMat4(mat);
@@ -198,7 +240,7 @@
         return true;
     };
     Piece.prototype.rotateY = function(dir) {
-        console.log('rotateY('+dir+')');
+        log('rotateY('+dir+')');
         var mat = mat4.create();
         mat4.rotateY(mat, mat, dir * Math.PI/2);
         this.transformMat4(mat);
@@ -206,7 +248,7 @@
         return true;
     };
     Piece.prototype.rotateZ = function(dir) {
-        console.log('rotateZ('+dir+')');
+        log('rotateZ('+dir+')');
         var mat = mat4.create();
         mat4.rotateZ(mat, mat, dir * Math.PI/2);
         this.transformMat4(mat);
@@ -240,9 +282,9 @@
                 front = offset[2];
             }
         });
-        this.w = right - left;
-        this.d = front - back;
-        this.h = top - bot;
+        this.w = right - left + 1;
+        this.d = front - back + 1;
+        this.h = top - bot + 1;
     };
 
     /**
@@ -348,6 +390,19 @@
         return new Piece(vec3.fromValues(0, BOARD_HEIGHT-1, 0), shapes[next].w, shapes[next].d, shapes[next].h, shapes[next].c);
     }
 
+    function makeGuide(piece) {
+        var x = Infinity, z = Infinity;
+        piece.offsets.forEach(function(offset) {
+            if(offset[0] < x) {
+                x = offset[0];
+            }
+            if(offset[2] < z) {
+                z = offset[2];
+            }
+        });
+        return new Guide(vec3.fromValues(piece.base[0]+x, BOARD_HEIGHT-1, piece.base[2]+z), piece.w, piece.d);
+    }
+
     function main() {
         // compatibility boilerplate
         if(!window.WebGLRenderingContext) {
@@ -387,6 +442,9 @@
         var cubeSolidGeom = makeCube(BLOCK_SIZE); // create geometry for solid part of cube
         var cubeWireGeom = makeWireframeCube(BLOCK_SIZE); // ... and wireframe part
 
+        var guideBackGeo = makeBack(BLOCK_SIZE);
+        var guideSideGeo = makeSide(BLOCK_SIZE);
+
         grid = new Thing(0, gridGeom.count(), YELLOW, gl.TRIANGLES);
         mat4.translate(grid.model, grid.model, vec3.fromValues(0, 0, 1));
 
@@ -395,11 +453,17 @@
         wireIndex = gridGeom.count() + cubeSolidGeom.count();
         wireCount = cubeWireGeom.count();
 
+        guideBackIndex = gridGeom.count() + cubeSolidGeom.count() + cubeWireGeom.count();
+        guideBackCount = guideBackGeo.count();
+        guideSideIndex = gridGeom.count() + cubeSolidGeom.count() + cubeWireGeom.count() + guideBackGeo.count();
+        guideSideCount = guideSideGeo.count();
+
         board = new Board(BOARD_WIDTH, BOARD_DEPTH, BOARD_HEIGHT);
         piece = randomPiece();
+        guide = makeGuide(piece);
 
         // upload all the geometry
-        var geometry = gridGeom.combine(cubeSolidGeom, cubeWireGeom);
+        var geometry = gridGeom.combine(cubeSolidGeom, cubeWireGeom, guideBackGeo, guideSideGeo);
         pushData(gl, geometry.flatten());
         updateAttrib(gl, program, 'pos', 4);
 
@@ -429,17 +493,35 @@
             case 80: /* P */ pause(); break;
 
             case 16: /* Shift */
-               piece = randomPiece();
-               break;
+                if(debug) {
+                    piece = randomPiece();
+                    guide = makeGuide(piece);
+                }
+                break;
 
-            case 87: /* W */ y = 1; break;
-            case 83: /* S */ y = -1; break;
-            case 65: /* A */ update(); break;
+            case 87: /* W */
+                if(debug) {
+                    y = 1;
+                }
+                break;
+
+            case 83: /* S */
+                if(debug) {
+                    y = -1;
+                }
+                break;
+
+            case 65: /* A */
+                if(debug) {
+                    update();
+                }
+                break;
+
             case 68: /* D */ break;
             case 81: /* Q */ break;
             case 69: /* E */ break;
 
-            case 32: /* Space */
+            case 32: /* Space: drop the piece */
                 while(board.rangeCheck(piece)) {
                     piece.move(0, -1, 0);
                 }
@@ -451,26 +533,33 @@
                 while(!board.rangeCheck(piece)) {
                     piece.rotate(1);
                 }
+                guide = makeGuide(piece);
                 break;
 
             case 90: /* Z */
-                piece.rotateZ(1);
-                if(!board.rangeCheck(piece)) {
-                    piece.rotateZ(-1);
+                if(debug) {
+                    piece.rotateZ(1);
+                    if(!board.rangeCheck(piece)) {
+                        piece.rotateZ(1);
+                    }
                 }
                 break;
 
             case 67: /* C */
-                piece.rotateY();
-                if(!board.rangeCheck(piece)) {
-                    piece.rotateY();
+                if(debug) {
+                    piece.rotateY(1);
+                    if(!board.rangeCheck(piece)) {
+                        piece.rotateY(1);
+                    }
                 }
                 break;
 
             case 88: /* X */
-                piece.rotateX(1);
-                if(!board.rangeCheck(piece)) {
-                    piece.rotateX(-1);
+                if(debug) {
+                    piece.rotateX(1);
+                    if(!board.rangeCheck(piece)) {
+                        piece.rotateX(1);
+                    }
                 }
             break;
 
@@ -482,9 +571,12 @@
             default: // console.log(evt.keyCode);
             break;
         }
+
         piece.move(x, y, z);
+        guide.move(x, y, z);
         if(!board.rangeCheck(piece)) {
             piece.move(-x, -y, -z);
+            guide.move(-x, -y, -z);
         }
     }
 
@@ -506,6 +598,7 @@
                 }
             }
             piece = randomPiece();
+            guide = makeGuide(piece);
             if(!board.rangeCheck(piece)) { // new piece collides, game over
                 pause();
                 var status = document.getElementById('status');
@@ -522,6 +615,9 @@
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         grid.draw(gl, program);
+        // draw the piece location help indicators
+        guide.draw(gl, program);
+
         // after drawing the grid, draw the field of frozen pieces along with the live piece
         // draw from back to front, left to right, bottom to top.
         // interleave drawing the blocks in the live piece with the field

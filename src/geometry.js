@@ -128,6 +128,30 @@
         ].map(toVec4));
     }
 
+    function makeBack(w) {
+        return new Geometry([
+            [0, w, 0, 1],
+            [w, w, 0, 1],
+            [0, 0, 0, 1],
+
+            [0, 0, 0, 1],
+            [w, w, 0, 1],
+            [w, 0, 0, 1]
+        ].map(toVec4));
+    }
+
+    function makeSide(w) {
+        return new Geometry([
+            [0, w, w, 1],
+            [0, 0, w, 1],
+            [0, w, 0, 1],
+
+            [0, w, 0, 1],
+            [0, 0, w, 1],
+            [0, 0, 0, 1]
+        ].map(toVec4));
+    }
+
     /**
      * returns geometry for a cube outlined in w thick lines of length l
      */
@@ -275,5 +299,7 @@
     window.makeWireframeCube = makeWireframeCube;
     window.deg = deg;
     window.rad = rad;
+    window.makeBack = makeBack;
+    window.makeSide = makeSide;
 
 })(window);

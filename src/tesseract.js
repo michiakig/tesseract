@@ -424,6 +424,19 @@
     function handle(evt) {
         var x = 0, y = 0, z = 0;
         switch(evt.keyCode) {
+            case 80: /* P */
+               if(update.intervalOn) {
+                   clearInterval(update.intervalID);
+                   update.intervalOn = false;
+               } else {
+                   update.intervalID = setInterval(update, 500);
+                   update.intervalOn = true;
+               }
+               break;
+            case 16: /* Shift */
+               piece = randomPiece();
+               break;
+
             case 87: /* W */ y = 1; break;
             case 83: /* S */ y = -1; break;
             case 65: /* A */ update(); break;

@@ -197,24 +197,61 @@
         var mat = mat4.create();
         mat4.rotateX(mat, mat, dir * Math.PI/2);
         this.transformMat4(mat);
+        this.updateDims();
+        return true;
     };
     Piece.prototype.rotateY = function(dir) {
         if(arguments.length < 1) {
             dir = 1;
         }
-        console.log('rotateY');
+        console.log('rotateY('+dir+')');
         var mat = mat4.create();
         mat4.rotateY(mat, mat, dir * Math.PI/2);
         this.transformMat4(mat);
+        this.updateDims();
+        return true;
     };
     Piece.prototype.rotateZ = function(dir) {
         if(arguments.length < 1) {
             dir = 1;
         }
-        console.log('rotateZ');
+        console.log('rotateZ('+dir+')');
         var mat = mat4.create();
         mat4.rotateZ(mat, mat, dir * Math.PI/2);
         this.transformMat4(mat);
+        this.updateDims();
+        return true;
+    };
+    Piece.prototype.updateDims = function() {
+        var left = 0;
+        var right = 0;
+        var top = 0;
+        var bot = 0;
+        var front = 0;
+        var back = 0;
+        this.offsets.forEach(function(offset) {
+            if(offset[0] < left) {
+                left = offset[0];
+            }
+            if(offset[1] < bot) {
+                bot = offset[1];
+            }
+            if(offset[2] < back) {
+                back = offset[2];
+            }
+            if(offset[0] > right) {
+                right = offset[0];
+            }
+            if(offset[1] > top) {
+                top = offset[1];
+            }
+            if(offset[2] > front) {
+                front = offset[2];
+            }
+        });
+        this.w = right - left;
+        this.d = front - back;
+        this.h = top - bot;
     };
 
     /**

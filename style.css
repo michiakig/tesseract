@@ -2,7 +2,11 @@ body {
     font-family: monospace;
     text-align: center;
 }
-p#score p#status canvas {
+p.controls {
+    padding: 0px;
+    margin: 0px;
+}
+canvas {
     margin-left: auto;
     margin-right: auto;
     border: 1px solid black;

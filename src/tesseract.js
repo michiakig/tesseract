@@ -1,3 +1,6 @@
+/**
+ * tesseract application code
+ */
 ;(function(window) {
     var requestAnimationFrame =
             window.requestAnimationFrame ||
@@ -5,6 +8,7 @@
             window.webkitRequestAnimationFrame ||
             window.msRequestAnimationFrame;
 
+    // offsets in pixels added to all drawing (from lower left)
     var WORLD_OFFSET_X = 150;
     var WORLD_OFFSET_Y = 50;
 
@@ -40,8 +44,10 @@
     var piece; // currently "live" piece
     var guide; // helpful guides at the top of the grid, to help orient the board and piece
 
+    // number of layers cleared
     var layers = 0;
 
+    // width, depth, height and color of shapes
     var shapes = [
         {w: 1, d: 1, h: 1, c: PURPLE},
         {w: 1, d: 1, h: 2, c: BLUE},
@@ -86,9 +92,25 @@
         gl.drawArrays(this.type, this.index, this.count);
     };
 
-    function Guide(pos, w, d) {
-        this.sides = [];
-        this.backs = [];
+    /**
+     * highlighted squares in grid indicating position of live piece in world: position, width and depth in blocks
+     */
+    function Guide(piece) {
+        var x = Infinity, z = Infinity;
+        piece.offsets.forEach(function(offset) {
+            if(offset[0] < x) {
+                x = offset[0];
+            }
+            if(offset[2] < z) {
+                z = offset[2];
+            }
+        });
+        var pos = vec3.fromValues(piece.base[0]+x, BOARD_HEIGHT-1, piece.base[2]+z);
+        var w = piece.w;
+        var d = piece.d;
+
+        this.sides = []; // for left side of grid
+        this.backs = []; // for back of grid
         var thing;
         for(var i = 0; i < w; i++) {
             thing = new Thing(guideBackIndex, guideBackCount, WHITE, WebGLRenderingContext.TRIANGLES);
@@ -110,6 +132,8 @@
         });
     };
     Guide.prototype.move = function(x, y, z) {
+        // move guides on back only by X, on side only by Z.
+        // fixes the guides flush to the top of the grid
         this.backs.forEach(function(back){
             back.move(x * BLOCK_SIZE, 0, 0);
         });
@@ -118,9 +142,14 @@
         });
     };
 
+    /**
+     * A colored block, the component making up pieces
+     * position in blocks, Float32Array color
+     */
     function Block(pos, color) {
         this.pos = pos;
         this.color = color;
+        // blocks consist of a colored solid part and a white wireframe part
         this.solid = new Thing(solidIndex, solidCount, this.color, WebGLRenderingContext.TRIANGLES);
         this.wire = new Thing(wireIndex, wireCount, WHITE, WebGLRenderingContext.LINE_STRIP);
         this.solid.move(pos[0] * BLOCK_SIZE, pos[1] * BLOCK_SIZE, pos[2] * BLOCK_SIZE);
@@ -166,6 +195,9 @@
         }
     }
 
+    /**
+     * A game piece, always a rectangular solid: w x d x h
+     */
     function Piece(base, w, d, h, color) {
         function makeOffsets(w, d, h) {
             var res = [];
@@ -179,15 +211,21 @@
             return res;
         }
 
+        // pieces are defined by a base position...
         this.base = base;
         this.w = w;
         this.d = d;
         this.h = h;
         this.color = color;
-
+        // ...and a list of offsets from that position
         this.offsets = makeOffsets(w, d, h);
         this.rotation = 0;
         this.makeBlocks();
+        // for example, the square piece:
+        //   ox
+        //   xx
+        // where `o` is base, would have the offsets:
+        // [(0,0,0),(1,0,0),(0,-1,0),(1,-1,0)]
     }
     Piece.prototype.makeBlocks = function() {
         this.blocks = this.offsets.map(function(off) {
@@ -219,18 +257,20 @@
         });
         this.makeBlocks();
     };
+    /**
+     * rotate the piece semi-intelligently
+     * dir should be 1 or -1, forward and backward rotations
+     */
     Piece.prototype.rotate = function(dir) {
         log('rotate('+dir+')');
         if(dir < 0) {
             this.rotation--;
         }
+        // pick an axis to rotate around
         switch(this.rotation % 3) {
             case 0: this.rotateZ(dir); break;
             case 1: this.rotateY(dir); break;
             case 2: this.rotateX(dir); break;
-            default:
-               throw new Error("Assertion failed, should never happen");
-               break;
         }
         if(dir > 0) {
             this.rotation++;
@@ -293,7 +333,7 @@
     };
 
     /**
-     * 3-dimensional game board
+     * 3-dimensional game board, keeps track of frozen pieces for collision detection and filling layers
      */
     function Board(w, d, h) {
         this.w = w;
@@ -321,6 +361,11 @@
         }
         return count;
     };
+    /**
+     * return false if the piece is out of bounds --
+     * colliding with a frozen block or outside the grid
+     * otherwise true
+     */
     Board.prototype.rangeCheck = function(piece) {
         for(var i in piece.blocks) {
             var block = piece.blocks[i];
@@ -338,14 +383,12 @@
     Board.prototype.set = function(x, y, z, thing) {
         this.board[y][x][z] = thing;
     };
-
     Board.prototype.addPiece = function(piece) {
         var that = this;
         piece.blocks.forEach(function(block) {
             that.set(block.pos[0], block.pos[1], block.pos[2], block);
         });
     };
-
     /**
      * Call fn on each block, in the order from bottom to top, back to
      * front, left to right
@@ -402,25 +445,9 @@
         }
     };
 
-    function randomPiece() {
-        var next = Math.floor(Math.random() * shapes.length);
-        var offsets = shapes[next];
-        return new Piece(vec3.fromValues(0, BOARD_HEIGHT-1, 0), shapes[next].w, shapes[next].d, shapes[next].h, shapes[next].c);
-    }
-
-    function makeGuide(piece) {
-        var x = Infinity, z = Infinity;
-        piece.offsets.forEach(function(offset) {
-            if(offset[0] < x) {
-                x = offset[0];
-            }
-            if(offset[2] < z) {
-                z = offset[2];
-            }
-        });
-        return new Guide(vec3.fromValues(piece.base[0]+x, BOARD_HEIGHT-1, piece.base[2]+z), piece.w, piece.d);
-    }
-
+    /**
+     * init function called once on document load
+     */
     function main() {
         // compatibility boilerplate
         if(!window.WebGLRenderingContext) {
@@ -460,6 +487,7 @@
         var cubeSolidGeom = makeCube(BLOCK_SIZE); // create geometry for solid part of cube
         var cubeWireGeom = makeWireframeCube(BLOCK_SIZE); // ... and wireframe part
 
+        // geometry for the guides
         var guideBackGeo = makeBack(BLOCK_SIZE);
         var guideSideGeo = makeSide(BLOCK_SIZE);
 
@@ -478,7 +506,7 @@
 
         board = new Board(BOARD_WIDTH, BOARD_DEPTH, BOARD_HEIGHT);
         piece = randomPiece();
-        guide = makeGuide(piece);
+        guide = new Guide(piece);
 
         // upload all the geometry
         var geometry = gridGeom.combine(cubeSolidGeom, cubeWireGeom, guideBackGeo, guideSideGeo);
@@ -488,6 +516,12 @@
         document.body.addEventListener('keydown', handle);
         draw();
         togglePause();
+    }
+
+    function randomPiece() {
+        var next = Math.floor(Math.random() * shapes.length);
+        var offsets = shapes[next];
+        return new Piece(vec3.fromValues(0, BOARD_HEIGHT-1, 0), shapes[next].w, shapes[next].d, shapes[next].h, shapes[next].c);
     }
 
     function togglePause() {
@@ -512,12 +546,38 @@
         }
         var x = 0, y = 0, z = 0;
         switch(evt.keyCode) {
+            /**
+             * Main game input
+             */
+            case 37: /* left */  x = -1; break;
+            case 38: /* up */    z = -1; break;
+            case 39: /* right */ x =  1; break;
+            case 40: /* down  */ z =  1; break;
+
             case 80: /* P */ togglePause(); break;
 
+            case 32: /* Space: drop the piece */
+                while(board.rangeCheck(piece)) {
+                    piece.move(0, -1, 0);
+                }
+                piece.move(0, 1, 0);
+                break;
+
+            case 86: /* V */
+                piece.rotate(1);
+                while(!board.rangeCheck(piece)) {
+                    piece.rotate(1);
+                }
+                guide = new Guide(piece);
+                break;
+
+            /**
+             * debug input
+             */
             case 16: /* Shift */
                 if(debug) {
                     piece = randomPiece();
-                    guide = makeGuide(piece);
+                    guide = new Guide(piece);
                 }
                 break;
 
@@ -537,25 +597,6 @@
                 if(debug) {
                     update();
                 }
-                break;
-
-            case 68: /* D */ break;
-            case 81: /* Q */ break;
-            case 69: /* E */ break;
-
-            case 32: /* Space: drop the piece */
-                while(board.rangeCheck(piece)) {
-                    piece.move(0, -1, 0);
-                }
-                piece.move(0, 1, 0);
-                break;
-
-            case 86: /* V */
-                piece.rotate(1);
-                while(!board.rangeCheck(piece)) {
-                    piece.rotate(1);
-                }
-                guide = makeGuide(piece);
                 break;
 
             case 90: /* Z */
@@ -585,11 +626,6 @@
                 }
             break;
 
-            case 37: /* left */  x = -1; break;
-            case 38: /* up */    z = -1; break;
-            case 39: /* right */ x =  1; break;
-            case 40: /* down  */ z =  1; break;
-
             default: // console.log(evt.keyCode);
             break;
         }
@@ -603,7 +639,7 @@
     }
 
     /**
-     * update the game state
+     * update the game state, called to drop the piece one step
      */
     function update() {
         // try to move the piece down
@@ -632,7 +668,7 @@
 
             // set up the next piece
             piece = randomPiece();
-            guide = makeGuide(piece);
+            guide = new Guide(piece);
             if(!board.rangeCheck(piece)) { // new piece collides, game over
                 togglePause();
                 var status = document.getElementById('status');

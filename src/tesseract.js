@@ -308,6 +308,19 @@
         }
         this.board = board;
     }
+    Board.prototype.count = function() {
+        var count = 0;
+        for(var x = 0; x < this.w; x++) {
+            for(var y = 0; y < this.h; y++) {
+                for(var z = 0; z < this.d; z++) {
+                    if(this.get(x, y, z)) {
+                        count++;
+                    }
+                }
+            }
+        }
+        return count;
+    };
     Board.prototype.rangeCheck = function(piece) {
         for(var i in piece.blocks) {
             var block = piece.blocks[i];
@@ -474,16 +487,16 @@
 
         document.body.addEventListener('keydown', handle);
         draw();
-
-        update.intervalID = setInterval(update, 500);
-        update.intervalOn = true;
+        togglePause();
     }
 
-    function pause() {
+    function togglePause() {
         if(update.intervalOn) {
+            log('(paused)');
             clearInterval(update.intervalID);
             update.intervalOn = false;
         } else {
+            log('(unpaused)');
             update.intervalID = setInterval(update, 500);
             update.intervalOn = true;
         }
@@ -493,9 +506,13 @@
      * handle keydown events
      */
     function handle(evt) {
+        if(redraw.on) {
+            redraw.on = false;
+            return;
+        }
         var x = 0, y = 0, z = 0;
         switch(evt.keyCode) {
-            case 80: /* P */ pause(); break;
+            case 80: /* P */ togglePause(); break;
 
             case 16: /* Shift */
                 if(debug) {
@@ -592,24 +609,32 @@
         // try to move the piece down
         piece.move(0, -1, 0);
         if(!board.rangeCheck(piece)) {
+            // piece collided with frozen blocks, freeze the piece
             piece.move(0, 1, 0);
             board.addPiece(piece);
 
+            // check for cleared layers
+            var deleted = false;
             for(var y = 0; y < BOARD_HEIGHT; ) {
                 if(board.checkLevel(y)) {
+                    deleted = true;
                     board.deleteLevel(y);
                     layers++;
                 } else {
                     y++;
                 }
             }
+            if(deleted) {
+                redraw();
+            }
             var score = document.getElementById('score');
             score.innerHTML = 'layers: ' + layers;
 
+            // set up the next piece
             piece = randomPiece();
             guide = makeGuide(piece);
             if(!board.rangeCheck(piece)) { // new piece collides, game over
-                pause();
+                togglePause();
                 var status = document.getElementById('status');
                 status.innerHTML = 'game over!';
             }
@@ -617,16 +642,44 @@
     }
 
     /**
-     * draw the whole scene, then loop via requestAnimationFrame
+     * call to start a slow redraw of the board
+     */
+    function redraw() {
+        log('redraw start ' + redraw.counter);
+        togglePause();
+        redraw.on = true;
+        redraw.counter = 0;
+        redraw.id = setInterval(function() {
+            redraw.counter++;
+            if(!redraw.on || redraw.counter >= board.count()) {
+                log('redraw done ' + redraw.counter);
+                clearInterval(redraw.id);
+                redraw.on = false;
+                redraw.id = undefined;
+                redraw.counter = 0;
+                togglePause();
+            }
+        }, 100);
+    }
+    redraw.on = false;
+    redraw.id = undefined;
+    redraw.counter = 0;
+
+    /**
+     * draw the whole scene, looping via requestAnimationFrame
      */
     function draw() {
+        requestAnimationFrame(draw);
+
         gl.clearColor(0, 0, 0, 1);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         grid.draw(gl, program);
-        // draw the piece location help indicators
+
+        // draw the piece location help indicators (white squares at top of grid)
         guide.draw(gl, program);
 
+        var drawn = 0;
         // after drawing the grid, draw the field of frozen pieces along with the live piece
         // draw from back to front, left to right, bottom to top.
         // interleave drawing the blocks in the live piece with the field
@@ -634,8 +687,15 @@
         for(var y = 0; y < board.h; y++) {
             for(var z = 0; z < board.d; z++) {
                 for(var x = 0; x < board.w; x++) {
+
                     if(board.get(x, y, z)) {
+                        // if currently doing a redraw, draw up to redraw.counter blocks then stop
+                        if(redraw.on && drawn >= redraw.counter) {
+                            return;
+                        }
+                        // draw a single block
                         board.get(x, y, z).draw(gl, program);
+                        drawn++;
                     } else {
                         for(var i in piece.blocks) {
                             if(piece.blocks[i].pos[0] === x && piece.blocks[i].pos[1] === y && piece.blocks[i].pos[2] === z) {
@@ -643,11 +703,11 @@
                             }
                         }
                     }
+
                 }
             }
         }
 
-        requestAnimationFrame(draw);
     }
 
     window.main = main;

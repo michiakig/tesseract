@@ -531,7 +531,7 @@
             update.intervalOn = false;
         } else {
             log('(unpaused)');
-            update.intervalID = setInterval(update, 500);
+            update.intervalID = setInterval(update, 750);
             update.intervalOn = true;
         }
     }

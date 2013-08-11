@@ -554,15 +554,25 @@
             case 39: /* right */ x =  1; break;
             case 40: /* down  */ z =  1; break;
 
+            case 49: case 97: /* 1 */ x = -1; z =  1; break;
+            case 50: case 98: /* 2 */ z =  1;         break;
+            case 51: case 99: /* 3 */ x =  1; z =  1; break;
+            case 52: case 100: /* 4 */ x = -1;         break;
+            case 54: case 102: /* 6 */ x =  1;         break;
+            case 55: case 103: /* 7 */ x = -1; z = -1; break;
+            case 56: case 104: /* 8 */         z = -1; break;
+            case 57: case 105: /* 9 */ x = -1; z = -1; break;
+
             case 80: /* P */ togglePause(); break;
 
-            case 32: /* Space: drop the piece */
+            case 96: case 32: /* Space: drop the piece */
                 while(board.rangeCheck(piece)) {
                     piece.move(0, -1, 0);
                 }
                 piece.move(0, 1, 0);
                 break;
 
+            case 53: case 101: /* 5 */
             case 86: /* V */
                 piece.rotate(1);
                 while(!board.rangeCheck(piece)) {
@@ -626,7 +636,7 @@
                 }
             break;
 
-            default: // console.log(evt.keyCode);
+            default: console.log(evt.keyCode);
             break;
         }
 
